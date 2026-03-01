@@ -1,0 +1,61 @@
+<div class="row g-3">
+  <!-- Menu sinistro -->
+  <div class="col-12 col-lg-3">
+    <div class="card shadow-soft panel">
+      <div class="card-body">
+        <div class="fw-bold mb-2">Catalogue</div>
+
+        <div class="nav nav-pills flex-column gap-2">
+          <button
+            class="btn text-start"
+            [ngClass]="view() === 'resources' ? 'btn-app' : 'btn-outline-secondary'"
+            (click)="setView('resources')"
+          >
+            Resources
+            <div class="small opacity-75">Risorse prenotabili</div>
+          </button>
+
+          <button
+            class="btn text-start"
+            [ngClass]="view() === 'slots' ? 'btn-app' : 'btn-outline-secondary'"
+            (click)="setView('slots')"
+          >
+            Slots
+            <div class="small opacity-75">Finestre temporali</div>
+          </button>
+
+          <button
+            class="btn text-start"
+            [ngClass]="view() === 'availabilities' ? 'btn-app' : 'btn-outline-secondary'"
+            (click)="setView('availabilities')"
+          >
+            Availabilities
+            <div class="small opacity-75">Capacity / Consumed</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenuto -->
+  <div class="col-12 col-lg-9">
+    <div class="card shadow-soft panel">
+      <div class="card-body">
+        <!-- RESOURCES -->
+        <ng-container *ngIf="view() === 'resources'">
+          <app-resources></app-resources>
+        </ng-container>
+
+        <!-- SLOTS -->
+        <ng-container *ngIf="view() === 'slots'">
+          <app-slots></app-slots>
+        </ng-container>
+
+        <!-- AVAILABILITIES -->
+        <ng-container *ngIf="view() === 'availabilities'">
+          <app-availabilities></app-availabilities>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,243 @@
+<div class="availWrap">
+  <div class="d-flex align-items-start justify-content-between gap-3">
+    <div>
+      <h2 class="h4 mb-1">Availabilities</h2>
+      <div class="text-muted">Disponibilità per Risorsa × Slot (capacity / consumed).</div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button
+        class="btn btn-outline-secondary btn-sm px-3"
+        type="button"
+        (click)="refreshAvailabilities()"
+        [disabled]="loading() || !selectedResourceId()"
+      >
+        Refresh
+      </button>
+
+      <button
+        class="btn btn-app btn-sm px-3"
+        type="button"
+        (click)="openCreate()"
+        [disabled]="!canOpenCreate()"
+      >
+       Crea disponibilità
+      </button>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- Contesto: select resource -->
+  <div class="card border-0 bg-light-subtle mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-6">
+          <label class="form-label">Resource</label>
+          <select
+            class="form-select"
+            [disabled]="loading()"
+            [ngModel]="selectedResourceId()"
+            (ngModelChange)="onSelectResource($event)"
+          >
+            <option value="">Seleziona…</option>
+            <option *ngFor="let r of resources(); trackBy: trackById" [value]="r.id">
+              {{ r.name }}
+            </option>
+          </select>
+          <div class="form-text">Seleziona una risorsa per vedere/gestire le sue disponibilità.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-responsive" *ngIf="selectedResourceId(); else noResource">
+    <table class="table align-middle table-hover">
+      <thead>
+      <tr>
+        <th>Slot</th>
+        <th style="width: 140px">Capacity</th>
+        <th style="width: 140px">Consumed</th>
+        <th style="width: 140px">Available</th>
+        <th class="text-end" style="width: 240px">Actions</th>
+      </tr>
+      </thead>
+
+      <tbody>
+      <tr *ngFor="let a of availabilities(); trackBy: trackById">
+        <!-- SLOT (NO UUID) -->
+        <td>
+          <div class="fw-semibold">{{ availabilityLabel(a) }}</div>
+
+        </td>
+
+        <!-- Capacity -->
+        <td>
+          <ng-container *ngIf="!isEditing(a); else editCapTpl">
+            <span class="fw-semibold">{{ a.capacity }}</span>
+          </ng-container>
+
+          <ng-template #editCapTpl>
+            <input
+              type="number"
+              class="form-control form-control-sm"
+              [(ngModel)]="editCapacity"
+              [disabled]="loading()"
+              min="0"
+              step="1"
+            />
+            <div class="form-text">>= 0</div>
+          </ng-template>
+        </td>
+
+        <td>
+          <span class="badge text-bg-light border">{{ a.consumed }}</span>
+        </td>
+
+        <td>
+            <span class="badge" [ngClass]="available(a) > 0 ? 'text-bg-success' : 'text-bg-secondary'">
+              {{ available(a) }}
+            </span>
+        </td>
+
+        <td class="text-end">
+          <ng-container *ngIf="!isEditing(a); else editActionsTpl">
+            <button class="btn btn-sm btn-outline-secondary me-2" type="button" (click)="startEdit(a)" [disabled]="loading()">
+              Edit
+            </button>
+
+            <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDelete(a)" [disabled]="loading()">
+              Delete
+            </button>
+          </ng-container>
+
+          <ng-template #editActionsTpl>
+            <button class="btn btn-sm btn-app me-2" type="button" (click)="saveEdit()" [disabled]="!canSaveEdit()">
+              Save
+            </button>
+
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cancelEdit()" [disabled]="loading()">
+              Cancel
+            </button>
+
+            <div *ngIf="editCapacity !== null && editCapacity! < 0" class="text-danger small mt-1">
+              Capacity deve essere >= 0.
+            </div>
+          </ng-template>
+        </td>
+      </tr>
+
+      <tr *ngIf="!loading() && availabilities().length === 0">
+        <td colspan="5" class="text-center text-muted py-4">Nessuna availability per questa risorsa.</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #noResource>
+    <div class="alert alert-light border">
+      Seleziona una <b>Resource</b> per visualizzare e creare le disponibilità.
+    </div>
+  </ng-template>
+
+  <!-- CREATE MODAL -->
+  <ng-container *ngIf="createOpen()">
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal d-block" tabindex="-1" role="dialog" (click)="closeCreate()">
+      <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Nuova disponibilità</h5>
+            <button type="button" class="btn-close" aria-label="Close" (click)="closeCreate()"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Slot</label>
+              <select class="form-select" [(ngModel)]="createSlotId" [disabled]="loading()">
+                <option value="">Seleziona…</option>
+                <option *ngFor="let s of slots(); trackBy: trackById" [value]="s.id">
+                  {{ formatNice(s.startDate) }} → {{ formatNice(s.endDate) }}
+                </option>
+              </select>
+            </div>
+
+            <div class="mb-1">
+              <label class="form-label">Capacity</label>
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="createCapacity"
+                [disabled]="loading()"
+                min="0"
+                step="1"
+                placeholder="0"
+              />
+              <div class="form-text">>= 0</div>
+            </div>
+
+            <div *ngIf="createSlotId && createCapacity !== null && createCapacity! < 0" class="text-danger small mt-2">
+              Capacity deve essere >= 0.
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="closeCreate()" [disabled]="loading()">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-app" (click)="create()" [disabled]="!canCreate()">
+              Create
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- DELETE MODAL (NO UUID) -->
+  <ng-container *ngIf="deleteOpen()">
+    <div class="modal-backdrop fade show"></div>
+
+    <div class="modal d-block" tabindex="-1" role="dialog" (click)="closeDelete()">
+      <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Conferma eliminazione</h5>
+            <button type="button" class="btn-close" aria-label="Close" (click)="closeDelete()"></button>
+          </div>
+
+          <div class="modal-body">
+            <p class="mb-2">Vuoi eliminare questa availability?</p>
+            <div class="small text-muted">
+              <div><b>Risorsa:</b> {{ selectedResourceName() }}</div>
+              <div><b>Slot:</b> {{ deleteTarget() ? slotRange(deleteTarget()!.slotId) : '' }}</div>
+              <div><b>Capacity:</b> {{ deleteTarget()?.capacity }}</div>
+              <div><b>Consumed:</b> {{ deleteTarget()?.consumed }}</div>
+            </div>
+            <p class="text-muted small mb-0 mt-2">Questa azione non è reversibile.</p>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="closeDelete()" [disabled]="loading()">
+              Annulla
+            </button>
+            <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="loading()">
+              Elimina
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- OVERLAY LOADER -->
+  <div class="overlay" *ngIf="loading()">
+    <div class="overlayCard">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+      <div class="mt-2">Aggiornamento…</div>
+    </div>
+  </div>
+</div>

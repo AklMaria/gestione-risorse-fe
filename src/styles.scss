@@ -1,0 +1,94 @@
+/* src/styles.scss */
+
+/* 1) Bootstrap (SCSS) */
+@import "bootstrap/scss/bootstrap";
+
+/* 2) Reset base */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #f6f7fb; /* sfondo chiaro tipo dashboard */
+  color: #111827;
+}
+
+/* 3) Link */
+a {
+  text-decoration: none;
+}
+
+/* 4) Piccoli helper (facoltativi) */
+.card {
+  border-radius: 16px;
+}
+
+.shadow-soft {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* 5) Colore “viola app” (facoltativo)
+   Bootstrap usa bg-primary/btn-primary ecc. Se vuoi un viola più specifico,
+   puoi sovrascrivere con queste utility personalizzate. */
+.bg-app {
+  background: #6f42c1 !important;
+}
+
+.btn-app {
+  background: #6f42c1 !important;
+  border-color: #6f42c1 !important;
+  color: #fff !important;
+}
+
+.btn-app:hover {
+  background: #5a34a3 !important;
+  border-color: #5a34a3 !important;
+}
+/* --- App theme (Bootstrap override) --- */
+:root {
+  --app-purple: #5b2ecc;      /* viola più elegante */
+  --app-purple-2: #4a23b0;    /* hover */
+  --app-surface: #ffffff;
+  --app-bg: #f6f7fb;
+  --app-border: rgba(17, 24, 39, 0.12);
+}
+
+body {
+  background: var(--app-bg);
+}
+
+/* Navbar */
+.bg-app {
+  background: var(--app-purple) !important;
+}
+
+/* Bottoni “app” */
+.btn-app {
+  background: var(--app-purple) !important;
+  border-color: var(--app-purple) !important;
+  color: #fff !important;
+  border-radius: 999px !important;
+  font-weight: 600;
+}
+
+.btn-app:hover {
+  background: var(--app-purple-2) !important;
+  border-color: var(--app-purple-2) !important;
+}
+
+/* Rendiamo tutti i bottoni più “moderni” */
+.btn {
+  border-radius: 999px;
+}
+
+/* Cards */
+.card {
+  border-radius: 18px;
+  border: 1px solid var(--app-border);
+}
+
+.shadow-soft {
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.08);
+}

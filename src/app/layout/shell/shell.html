@@ -1,0 +1,23 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-app">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">Gestione Risorse</span>
+
+    <div class="ms-3 d-flex gap-2">
+      <a class="btn btn-sm px-3"
+         [ngClass]="isActive('/catalogue') ? 'btn-light' : 'btn-outline-light'"
+         routerLink="/catalogue">
+        Catalogue
+      </a>
+
+      <a class="btn btn-sm px-3"
+         [ngClass]="isActive('/bookings') ? 'btn-light' : 'btn-outline-light'"
+         routerLink="/bookings">
+        Bookings
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid py-3">
+  <router-outlet></router-outlet>
+</div>
