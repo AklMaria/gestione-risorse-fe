@@ -45,6 +45,7 @@
           <button class="btn btn-app w-100" type="button" (click)="create()" [disabled]="!canCreate()">
             Create
           </button>
+
         </div>
       </div>
 
@@ -105,21 +106,23 @@
         <td class="text-end">
           <ng-container *ngIf="!isEditing(s); else editActionsTpl">
             <button
-              class="btn btn-sm btn-outline-secondary me-2"
+              class="btn btn-outline-secondary icon-btn me-2"
               type="button"
               (click)="startEdit(s)"
               [disabled]="loading()"
+              title="Edit"
             >
-              Edit
+              <i class="bi bi-pencil"></i>
             </button>
 
             <button
-              class="btn btn-sm btn-outline-danger"
+              class="btn btn-outline-danger icon-btn"
               type="button"
               (click)="openDelete(s)"
               [disabled]="loading()"
+              title="Delete"
             >
-              Delete
+              <i class="bi bi-trash"></i>
             </button>
           </ng-container>
 

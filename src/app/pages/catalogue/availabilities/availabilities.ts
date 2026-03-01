@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { AvailabilitiesService } from '../services/availabilities.service';
 import { ResourcesService } from '../services/resources.service';
@@ -35,6 +36,7 @@ export class Availabilities implements OnInit {
   createOpen = signal(false);
   createSlotId = '';
   createCapacity: number | null = null;
+  createError = signal<string | null>(null);
 
   // Edit capacity inline
   editingId: UUID | null = null;
@@ -50,7 +52,6 @@ export class Availabilities implements OnInit {
 
   // ---------- helpers ----------
   formatNice(iso: string): string {
-    // “02/03/2026, 11:00” in IT locale
     return new Date(iso).toLocaleString();
   }
 
@@ -63,14 +64,12 @@ export class Availabilities implements OnInit {
   slotRange(slotId: UUID): string {
     const s = this.slots().find((x) => x.id === slotId);
     if (!s) return '';
-    // solo range, senza UUID
     return `${this.formatNice(s.startDate)} → ${this.formatNice(s.endDate)}`;
   }
 
   availabilityLabel(a: AvailabilityDto): string {
     const resourceName = this.selectedResourceName();
     const range = this.slotRange(a.slotId);
-    // es: "Room A — 02/03/2026, 11:00 → 02/03/2026, 13:00"
     if (resourceName && range) return `${resourceName} — ${range}`;
     return range || resourceName || '';
   }
@@ -99,6 +98,22 @@ export class Availabilities implements OnInit {
     if (!this.createSlotId) return false;
     if (this.createCapacity === null || this.createCapacity === undefined) return false;
     return Number.isFinite(this.createCapacity) && this.createCapacity >= 0;
+  }
+
+  // ---------- error parsing ----------
+  private toNiceApiMessage(err: unknown): string {
+    if (err instanceof HttpErrorResponse) {
+      const body: any = err.error;
+      const msg =
+        (typeof body === 'string' && body) ||
+        body?.message ||
+        body?.error ||
+        body?.detail ||
+        err.message ||
+        'Richiesta fallita';
+      return String(msg);
+    }
+    return 'Errore inatteso';
   }
 
   // ---------- load ----------
@@ -149,6 +164,7 @@ export class Availabilities implements OnInit {
     if (!this.canOpenCreate()) return;
     this.createSlotId = '';
     this.createCapacity = null;
+    this.createError.set(null);
     this.createOpen.set(true);
   }
 
@@ -156,13 +172,27 @@ export class Availabilities implements OnInit {
     this.createOpen.set(false);
     this.createSlotId = '';
     this.createCapacity = null;
+    this.createError.set(null);
+  }
+
+  // chiamali dall’HTML con (ngModelChange) per resettare error quando l'utente modifica i campi
+  onCreateSlotChange(v: string): void {
+    this.createSlotId = v;
+    this.createError.set(null);
+  }
+
+  onCreateCapacityChange(v: any): void {
+    this.createCapacity = v === '' || v === null || v === undefined ? null : Number(v);
+    this.createError.set(null);
   }
 
   create(): void {
     const rid = this.selectedResourceId();
     if (!rid || !this.canCreate()) return;
 
+    this.createError.set(null);
     this.loading.set(true);
+
     this.availService
       .create({
         resourceId: rid,
@@ -170,9 +200,14 @@ export class Availabilities implements OnInit {
         capacity: Number(this.createCapacity),
       })
       .pipe(finalize(() => this.loading.set(false)))
-      .subscribe(() => {
-        this.closeCreate();
-        this.refreshAvailabilities();
+      .subscribe({
+        next: () => {
+          this.closeCreate();
+          this.refreshAvailabilities();
+        },
+        error: (e) => {
+          this.createError.set(this.toNiceApiMessage(e));
+        },
       });
   }
 

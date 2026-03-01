@@ -21,7 +21,7 @@
         (click)="openCreate()"
         [disabled]="!canOpenCreate()"
       >
-       Crea disponibilità
+        Crea disponibilità
       </button>
     </div>
   </div>
@@ -47,7 +47,6 @@
           </select>
           <div class="form-text">Seleziona una risorsa per vedere/gestire le sue disponibilità.</div>
         </div>
-
       </div>
     </div>
   </div>
@@ -70,7 +69,6 @@
         <!-- SLOT (NO UUID) -->
         <td>
           <div class="fw-semibold">{{ availabilityLabel(a) }}</div>
-
         </td>
 
         <!-- Capacity -->
@@ -104,12 +102,24 @@
 
         <td class="text-end">
           <ng-container *ngIf="!isEditing(a); else editActionsTpl">
-            <button class="btn btn-sm btn-outline-secondary me-2" type="button" (click)="startEdit(a)" [disabled]="loading()">
-              Edit
+            <button
+              class="btn btn-outline-secondary icon-btn me-2"
+              type="button"
+              (click)="startEdit(a)"
+              [disabled]="loading()"
+              title="Edit"
+            >
+              <i class="bi bi-pencil"></i>
             </button>
 
-            <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDelete(a)" [disabled]="loading()">
-              Delete
+            <button
+              class="btn btn-outline-danger icon-btn"
+              type="button"
+              (click)="openDelete(a)"
+              [disabled]="loading()"
+              title="Delete"
+            >
+              <i class="bi bi-trash"></i>
             </button>
           </ng-container>
 
@@ -118,7 +128,12 @@
               Save
             </button>
 
-            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cancelEdit()" [disabled]="loading()">
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              type="button"
+              (click)="cancelEdit()"
+              [disabled]="loading()"
+            >
               Cancel
             </button>
 
@@ -155,9 +170,19 @@
           </div>
 
           <div class="modal-body">
+            <!-- API ERROR -->
+            <div *ngIf="createError()" class="alert alert-danger">
+              {{ createError() }}
+            </div>
+
             <div class="mb-3">
               <label class="form-label">Slot</label>
-              <select class="form-select" [(ngModel)]="createSlotId" [disabled]="loading()">
+              <select
+                class="form-select"
+                [ngModel]="createSlotId"
+                (ngModelChange)="onCreateSlotChange($event)"
+                [disabled]="loading()"
+              >
                 <option value="">Seleziona…</option>
                 <option *ngFor="let s of slots(); trackBy: trackById" [value]="s.id">
                   {{ formatNice(s.startDate) }} → {{ formatNice(s.endDate) }}
@@ -170,7 +195,8 @@
               <input
                 type="number"
                 class="form-control"
-                [(ngModel)]="createCapacity"
+                [ngModel]="createCapacity"
+                (ngModelChange)="onCreateCapacityChange($event)"
                 [disabled]="loading()"
                 min="0"
                 step="1"

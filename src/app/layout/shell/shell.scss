@@ -1,0 +1,22 @@
+/* barra viola con bordi tondi */
+.topbar {
+  margin: 12px 12px 0 12px;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.14);
+}
+
+.navPills {
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.navPills .btn {
+  border-radius: 999px;
+}
+/* pill attiva */
+.activePill {
+  box-shadow: 0 10px 20px rgba(17, 24, 39, 0.16);
+}
