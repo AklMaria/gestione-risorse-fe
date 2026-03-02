@@ -1,0 +1,35 @@
+<div class="row g-3">
+  <div class="col-12 col-lg-3">
+    <div class="card shadow-soft panel">
+      <div class="card-body">
+        <div class="fw-bold mb-2">User</div>
+        <div class="text-muted small mb-3">Prenota / Le mie prenotazioni</div>
+
+        <div class="d-grid gap-2">
+          <button class="btn text-start" [ngClass]="view() === 'browse' ? 'btn-app' : 'btn-outline-secondary'" (click)="setView('browse')">
+            Prenotabili
+          </button>
+          <button class="btn text-start" [ngClass]="view() === 'my' ? 'btn-app' : 'btn-outline-secondary'" (click)="setView('my')">
+            Le mie prenotazioni
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-9">
+    <div class="card shadow-soft panel">
+      <div class="card-body">
+        <div *ngIf="view() === 'browse'">
+          <h3 class="h5">Prenotabili</h3>
+          <div class="text-muted">Qui mettiamo le cards delle availability + “Prenota”.</div>
+        </div>
+
+        <div *ngIf="view() === 'my'">
+          <h3 class="h5">Le mie prenotazioni</h3>
+          <div class="text-muted">Qui mettiamo le cards dei booking creati dall’utente.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
