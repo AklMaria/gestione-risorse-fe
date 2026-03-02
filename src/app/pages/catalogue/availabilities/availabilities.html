@@ -2,7 +2,7 @@
   <div class="d-flex align-items-start justify-content-between gap-3">
     <div>
       <h2 class="h4 mb-1">Availabilities</h2>
-      <div class="text-muted">Disponibilità per Risorsa × Slot (capacity / consumed).</div>
+      <div class="text-muted">Availability for Resource× Slot (capacity / consumed).</div>
     </div>
 
     <div class="d-flex gap-2">
@@ -20,8 +20,7 @@
         type="button"
         (click)="openCreate()"
         [disabled]="!canOpenCreate()"
-      >
-        Crea disponibilità
+        Create availability
       </button>
     </div>
   </div>
@@ -45,7 +44,7 @@
               {{ r.name }}
             </option>
           </select>
-          <div class="form-text">Seleziona una risorsa per vedere/gestire le sue disponibilità.</div>
+          <div class="form-text">Select a resource to see its availabilities</div>
         </div>
       </div>
     </div>
@@ -145,7 +144,7 @@
       </tr>
 
       <tr *ngIf="!loading() && availabilities().length === 0">
-        <td colspan="5" class="text-center text-muted py-4">Nessuna availability per questa risorsa.</td>
+        <td colspan="5" class="text-center text-muted py-4"> There is no availabilities for this resource.</td>
       </tr>
       </tbody>
     </table>
@@ -153,7 +152,7 @@
 
   <ng-template #noResource>
     <div class="alert alert-light border">
-      Seleziona una <b>Resource</b> per visualizzare e creare le disponibilità.
+      Select a <b>Resource</b> to visualize and create availabilities for this resource.
     </div>
   </ng-template>
 
@@ -165,7 +164,7 @@
       <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Nuova disponibilità</h5>
+            <h5 class="modal-title">New availability</h5>
             <button type="button" class="btn-close" aria-label="Close" (click)="closeCreate()"></button>
           </div>
 
@@ -183,7 +182,7 @@
                 (ngModelChange)="onCreateSlotChange($event)"
                 [disabled]="loading()"
               >
-                <option value="">Seleziona…</option>
+                <option value="">Select…</option>
                 <option *ngFor="let s of slots(); trackBy: trackById" [value]="s.id">
                   {{ formatNice(s.startDate) }} → {{ formatNice(s.endDate) }}
                 </option>

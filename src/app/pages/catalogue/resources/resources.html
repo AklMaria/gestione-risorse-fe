@@ -1,7 +1,6 @@
 <div class="d-flex align-items-start justify-content-between gap-3">
   <div>
     <h2 class="h4 mb-1">Resources</h2>
-    <div class="text-muted">CRUD delle risorse prenotabili.</div>
   </div>
 
   <button
@@ -34,9 +33,8 @@
           class="form-control"
           [(ngModel)]="newName"
           [disabled]="loading()"
-          placeholder="Es: Sala Riunioni A"
+          placeholder="Room A : general meeting"
         />
-        <div class="form-text">Min 2 caratteri</div>
       </div>
 
       <div class="flex-fill">
@@ -45,7 +43,7 @@
           class="form-control"
           [(ngModel)]="newDescription"
           [disabled]="loading()"
-          placeholder="Opzionale"
+          placeholder="description"
         />
       </div>
 
@@ -86,7 +84,6 @@
 
         <ng-template #editNameTpl>
           <input class="form-control form-control-sm" [(ngModel)]="editName" [disabled]="loading()" />
-          <div class="form-text">Min 2 caratteri</div>
         </ng-template>
       </td>
 
