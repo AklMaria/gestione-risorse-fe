@@ -1,27 +1,20 @@
-<nav class="navbar navbar-dark bg-app topbar">
-  <div class="container-fluid">
-    <div class="d-flex align-items-center gap-3">
-      <span class="navbar-brand mb-0 fw-bold">Gestione Risorse</span>
+<nav class="topbar">
+  <div class="topbar-inner">
+    <div class="brandBlock">
+      <div class="brand">Resources Management</div>
 
-      <div class="navPills">
-        <a
-          class="btn btn-sm px-3"
-          [ngClass]="isActive('/catalogue') ? 'btn-light activePill' : 'btn-outline-light'"
-          routerLink="/catalogue"
-        >
+      <div class="menuTabs">
+        <!-- ✅ admin vede catalogue -->
+        <a *ngIf="auth.isAdmin()" class="menuTab" routerLink="/catalogue" routerLinkActive="active">
           Catalogue
         </a>
 
-        <a
-          class="btn btn-sm px-3"
-          [ngClass]="isActive('/bookings') ? 'btn-light activePill' : 'btn-outline-light'"
-          routerLink="/bookings"
-        >
+        <!-- ✅ tutti vedono bookings -->
+        <a class="menuTab" routerLink="/bookings" routerLinkActive="active">
           Bookings
         </a>
       </div>
     </div>
-
   </div>
 </nav>
 

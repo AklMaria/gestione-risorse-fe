@@ -1,99 +1,83 @@
-/* src/styles.scss */
-
-/* 1) Bootstrap (SCSS) */
-@import "bootstrap/scss/bootstrap";
+/* Bootstrap should already be imported in angular.json or here.
+   If you import bootstrap here, keep it as the first import:
+   @import "bootstrap/dist/css/bootstrap.min.css";
+*/
+@import "bootstrap/dist/css/bootstrap.min.css";
 @import "bootstrap-icons/font/bootstrap-icons.css";
 
-/* 2) Reset base */
-html,
-body {
+:root {
+  --app-primary: #5b2bd6;   /* viola più moderno */
+  --app-primary-2: #6f3df0;
+  --app-bg: #f6f7fb;
+  --app-card: #ffffff;
+  --app-border: rgba(17, 24, 39, 0.12);
+  --app-text: #111827;
+  --app-muted: #6b7280;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --radius-sm: 12px;
+}
+
+html, body {
   height: 100%;
 }
 
 body {
   margin: 0;
-  background: #f6f7fb; /* sfondo chiaro tipo dashboard */
-  color: #111827;
-}
-
-/* 3) Link */
-a {
-  text-decoration: none;
-}
-
-/* 4) Piccoli helper (facoltativi) */
-.card {
-  border-radius: 16px;
-}
-
-.shadow-soft {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-/* 5) Colore “viola app” (facoltativo)
-   Bootstrap usa bg-primary/btn-primary ecc. Se vuoi un viola più specifico,
-   puoi sovrascrivere con queste utility personalizzate. */
-.bg-app {
-  background: #6f42c1 !important;
-}
-
-.btn-app {
-  background: #6f42c1 !important;
-  border-color: #6f42c1 !important;
-  color: #fff !important;
-}
-
-.btn-app:hover {
-  background: #5a34a3 !important;
-  border-color: #5a34a3 !important;
-}
-/* --- App theme (Bootstrap override) --- */
-:root {
-  --app-purple: #5b2ecc;      /* viola più elegante */
-  --app-purple-2: #4a23b0;    /* hover */
-  --app-surface: #ffffff;
-  --app-bg: #f6f7fb;
-  --app-border: rgba(17, 24, 39, 0.12);
-}
-
-body {
   background: var(--app-bg);
+  color: var(--app-text);
+  overflow-x: hidden;      /* evita scroll laterale inutile */
 }
 
-/* Navbar */
-.bg-app {
-  background: var(--app-purple) !important;
+/* ---------- App utilities ---------- */
+.shadow-soft {
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.10);
 }
 
-/* Bottoni “app” */
-.btn-app {
-  background: var(--app-purple) !important;
-  border-color: var(--app-purple) !important;
-  color: #fff !important;
-  border-radius: 999px !important;
-  font-weight: 600;
+.card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--app-border);
 }
 
-.btn-app:hover {
-  background: var(--app-purple-2) !important;
-  border-color: var(--app-purple-2) !important;
+.modal-content {
+  border-radius: var(--radius-lg);
 }
 
-/* Rendiamo tutti i bottoni più “moderni” */
+/* rounded inputs everywhere */
+.form-control,
+.form-select,
+.input-group-text {
+  border-radius: var(--radius-md) !important;
+  border-color: var(--app-border) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(91, 43, 214, 0.45) !important;
+  box-shadow: 0 0 0 0.2rem rgba(91, 43, 214, 0.15) !important;
+}
+
+/* datetime-local looks like the others */
+input[type="datetime-local"].form-control {
+  border-radius: var(--radius-md) !important;
+}
+
+/* Buttons */
 .btn {
   border-radius: 999px;
 }
 
-/* Cards */
-.card {
-  border-radius: 18px;
-  border: 1px solid var(--app-border);
+.btn-app {
+  background: linear-gradient(135deg, var(--app-primary), var(--app-primary-2));
+  border: none;
+  color: #fff;
+}
+.btn-app:hover {
+  filter: brightness(0.97);
+  color: #fff;
 }
 
-.shadow-soft {
-  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.08);
-}
-
+/* icon buttons */
 .icon-btn {
   width: 36px;
   height: 36px;
@@ -102,4 +86,26 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Remove default table harshness */
+.table {
+  --bs-table-bg: transparent;
+}
+.table thead th {
+  color: var(--app-text);
+  font-weight: 700;
+}
+.table tbody td {
+  border-color: rgba(17, 24, 39, 0.08);
+}
+
+/* Fix the “right empty scroll” on some layouts */
+.container-fluid {
+  max-width: 1400px; /* evita layout troppo largo con vuoti */
+}
+
+/* Make alerts match */
+.alert {
+  border-radius: var(--radius-md);
 }

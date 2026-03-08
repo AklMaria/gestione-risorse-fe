@@ -1,22 +1,59 @@
-/* barra viola con bordi tondi */
 .topbar {
   margin: 12px 12px 0 12px;
-  border-radius: 18px;
-  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.14);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--app-primary), var(--app-primary-2));
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.16);
 }
 
-.navPills {
+.topbar-inner {
+  padding: 16px 18px 14px 18px;
+}
+
+.brandBlock {
   display: flex;
-  gap: 8px;
-  padding: 0;
-  border-radius: 999px;
-  background: transparent;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.navPills .btn {
-  border-radius: 999px;
+.brand {
+  color: #fff;
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: 0.2px;
 }
-/* pill attiva */
-.activePill {
-  box-shadow: 0 10px 20px rgba(17, 24, 39, 0.16);
+
+/* Menu tabs sotto il titolo */
+.menuTabs {
+  display: flex;
+  gap: 14px;
+}
+
+/* tab stile menu (non bottone) */
+.menuTab {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 700;
+  padding: 6px 2px;
+  border-bottom: 2px solid transparent;
+  transition: all 120ms ease;
+}
+
+.menuTab:hover {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.35);
+}
+
+.menuTab.active {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+.roleBadge {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
