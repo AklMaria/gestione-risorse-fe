@@ -54,7 +54,6 @@
 
           <hr />
 
-          <div *ngIf="toast()" class="alert alert-success">{{ toast() }}</div>
           <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
 
           <div class="row g-2 align-items-end mb-3">
@@ -149,12 +148,7 @@
                       </div>
 
                       <label class="form-label">Note (optional)</label>
-                      <input
-                        class="form-control"
-                        [(ngModel)]="bookNote"
-                        [disabled]="loading()"
-                        placeholder="e.g. for meeting..."
-                      />
+                      <input class="form-control" [(ngModel)]="bookNote" [disabled]="loading()" placeholder="e.g. for meeting..." />
                     </div>
                   </div>
 
@@ -213,7 +207,10 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start gap-2">
                     <span class="badge" [ngClass]="statusBadgeClass(b.status)">{{ b.status }}</span>
+
+                    <!-- Hide only for finished/error statuses -->
                     <button
+                      *ngIf="canHideMine(b)"
                       class="btn btn-sm btn-outline-secondary"
                       type="button"
                       (click)="removeFromMine(b.id)"
@@ -221,6 +218,12 @@
                     >
                       Hide
                     </button>
+                  </div>
+
+                  <!-- Spinner for pending statuses -->
+                  <div class="busyRow mt-2" *ngIf="isBusyStatus(b.status)">
+                    <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                    <div class="busyText">{{ busyLabel(b.status) }}</div>
                   </div>
 
                   <div class="mt-2 small text-muted" *ngIf="b.reason">Reason: {{ b.reason }}</div>
@@ -239,11 +242,10 @@
                       class="btn btn-outline-danger"
                       type="button"
                       (click)="openCancel(b)"
-                      [disabled]="myLoading() || !canCancelMine(b)"
+                      [disabled]="myLoading() || !canCancelMine(b) || isBusyStatus(b.status)"
                     >
                       Cancel booking
                     </button>
-                    <div class="text-muted small mt-1">Cancel is available only if CONFIRMED.</div>
                   </div>
                 </div>
               </div>
@@ -268,9 +270,6 @@
 
                   <div class="modal-body">
                     <p class="mb-0">Do you want to cancel this booking?</p>
-                    <p class="text-muted small mb-0 mt-2">
-                      Status will move to CANCEL_PENDING, then CANCELLED/FAILED.
-                    </p>
                   </div>
 
                   <div class="modal-footer">

@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { forkJoin, Subscription, timer } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { BookingDto, BookingStatus } from '../bookings.dto';
-import { BookingsService } from '../bookings.service';
+
+
+
 import { ResourcesService } from '../../catalogue/services/resources.service';
 import { SlotsService } from '../../catalogue/services/slots.service';
 import { AvailabilitiesService } from '../../catalogue/services/availabilities.service';
@@ -13,6 +14,8 @@ import { AvailabilitiesService } from '../../catalogue/services/availabilities.s
 import { ResourcesDto } from '../../catalogue/dto/resources.dto';
 import { SlotDto } from '../../catalogue/dto/slots.dto';
 import { AvailabilityDto } from '../../catalogue/dto/availabilities.dto';
+import { BookingsService } from '../bookings.service';
+import { BookingDto, BookingStatus } from '../bookings.dto';
 
 type AvailabilityCardVm = {
   availabilityId: string;
@@ -39,36 +42,36 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
 
   view = signal<'browse' | 'my'>('browse');
 
+  // bookable section
   loading = signal(false);
   error = signal<string | null>(null);
+  toast = signal<string | null>(null);
 
-  // Prenotabili (cards)
   resources = signal<ResourcesDto[]>([]);
   slots = signal<SlotDto[]>([]);
   cards = signal<AvailabilityCardVm[]>([]);
   search = signal('');
   onlyAvailable = signal(true);
 
-  // Modale prenota
+  // book modal
   bookOpen = signal(false);
   bookTarget = signal<AvailabilityCardVm | null>(null);
   bookNote = '';
   bookError = signal<string | null>(null);
-  toast = signal<string | null>(null);
 
-  // Le mie prenotazioni (cards)
+  // my bookings section
   myLoading = signal(false);
   myError = signal<string | null>(null);
   myBookings = signal<BookingDto[]>([]);
   myAuto = signal(true);
   private myPollSub: Subscription | null = null;
 
-  // Cancel modal
+  // cancel modal
   cancelOpen = signal(false);
   cancelTarget = signal<BookingDto | null>(null);
 
   ngOnInit(): void {
-    this.loadPrenotabili();
+    this.loadBookable();
     this.loadMyBookings();
   }
 
@@ -82,6 +85,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     if (v === 'my') this.loadMyBookings();
   }
 
+  // ---------- helpers ----------
   private toNiceApiMessage(err: unknown): string {
     if (err instanceof HttpErrorResponse) {
       const body: any = err.error;
@@ -91,18 +95,45 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
         body?.error ||
         body?.detail ||
         err.message ||
-        'Richiesta fallita';
+        'Request failed';
       return String(msg);
     }
-    return 'Errore inatteso';
+    return 'Unexpected error';
   }
 
   formatNice(iso: string): string {
     return new Date(iso).toLocaleString();
   }
 
-  // ---------------- PRENOTABILI ----------------
-  loadPrenotabili(): void {
+  statusBadgeClass(s: BookingStatus): string {
+    switch (s) {
+      case 'CONFIRMED':
+        return 'text-bg-success';
+      case 'PENDING':
+      case 'CANCEL_PENDING':
+        return 'text-bg-warning';
+      case 'CANCELLED':
+        return 'text-bg-secondary';
+      case 'REJECTED':
+      case 'FAILED':
+        return 'text-bg-danger';
+      default:
+        return 'text-bg-light';
+    }
+  }
+
+  isBusyStatus(s: BookingStatus): boolean {
+    return s === 'PENDING' || s === 'CANCEL_PENDING';
+  }
+
+  busyLabel(s: BookingStatus): string {
+    if (s === 'PENDING') return 'Processing…';
+    if (s === 'CANCEL_PENDING') return 'Cancelling…';
+    return '';
+  }
+
+  // ---------- BOOKABLE ----------
+  loadBookable(): void {
     this.loading.set(true);
     this.error.set(null);
 
@@ -121,6 +152,10 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       });
   }
 
+  refreshPrenotabili(): void {
+    this.loadBookable();
+  }
+
   private loadAllAvailabilities(): void {
     const res = this.resources();
     if (res.length === 0) {
@@ -131,7 +166,6 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
 
-    // listByResource per tutte le resources
     forkJoin(res.map((r) => this.availService.listByResource(r.id as any)))
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
@@ -169,10 +203,6 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       });
   }
 
-  refreshPrenotabili(): void {
-    this.loadPrenotabili();
-  }
-
   filteredCards(): AvailabilityCardVm[] {
     const q = this.search().trim().toLowerCase();
     return this.cards()
@@ -185,6 +215,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       );
   }
 
+  // book modal
   openBook(c: AvailabilityCardVm): void {
     this.toast.set(null);
     this.bookError.set(null);
@@ -220,15 +251,15 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (b: BookingDto) => {
           if (b?.id) this.saveMyBookingId(b.id);
-          this.toast.set('Prenotazione inviata (PENDING). Vai su “Le mie prenotazioni”.');
+          this.toast.set('Booking requested (PENDING). Check “My bookings”.');
           this.closeBook();
-          this.loadMyBookings(); // aggiorna subito
+          this.loadMyBookings();
         },
         error: (e) => this.bookError.set(this.toNiceApiMessage(e)),
       });
   }
 
-  // ---------------- LE MIE PRENOTAZIONI ----------------
+  // ---------- MY BOOKINGS ----------
   private getMyIds(): string[] {
     return JSON.parse(localStorage.getItem('myBookingIds') || '[]') as string[];
   }
@@ -237,26 +268,8 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     localStorage.setItem('myBookingIds', JSON.stringify(ids));
   }
 
-  statusBadgeClass(s: BookingStatus): string {
-    switch (s) {
-      case 'CONFIRMED':
-        return 'text-bg-success';
-      case 'PENDING':
-      case 'CANCEL_PENDING':
-        return 'text-bg-warning';
-      case 'CANCELLED':
-        return 'text-bg-secondary';
-      case 'REJECTED':
-      case 'FAILED':
-        return 'text-bg-danger';
-      default:
-        return 'text-bg-light';
-    }
-  }
-
   loadMyBookings(): void {
     const ids = this.getMyIds();
-
     if (ids.length === 0) {
       this.myBookings.set([]);
       this.stopMyPolling();
@@ -266,20 +279,16 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     this.myLoading.set(true);
     this.myError.set(null);
 
-    // Facciamo richieste una per una, così gestiamo 404 senza rompere tutto.
     const results: BookingDto[] = [];
     const remainingIds: string[] = [];
-
     let pending = ids.length;
 
     const done = () => {
       pending -= 1;
       if (pending > 0) return;
 
-      // aggiorna localStorage: rimuove gli id che erano 404
       this.setMyIds(remainingIds);
 
-      // ordina
       const sorted = results.slice().sort((a, b) => {
         const ta = new Date((a as any).updatedAt || (a as any).createdAt || 0).getTime();
         const tb = new Date((b as any).updatedAt || (b as any).createdAt || 0).getTime();
@@ -299,15 +308,11 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
           done();
         },
         error: (e) => {
-          // se 404: booking non esiste più -> lo rimuoviamo silenziosamente dai "miei"
           if (e?.status === 404) {
             done();
             return;
           }
-
-          // altri errori: li segnaliamo, ma continuiamo comunque a caricare gli altri
           this.myError.set(this.toNiceApiMessage(e));
-          // teniamo l'id per non perderlo in caso di errore temporaneo
           remainingIds.push(id);
           done();
         },
@@ -346,6 +351,11 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     return b.status === 'CONFIRMED';
   }
 
+  // Hide is useful after completion (CANCELLED / FAILED / REJECTED)
+  canHideMine(b: BookingDto): boolean {
+    return b.status !== 'CONFIRMED' && b.status !== 'PENDING' && b.status !== 'CANCEL_PENDING';
+  }
+
   removeFromMine(id: string): void {
     const ids = this.getMyIds().filter((x) => x !== id);
     this.setMyIds(ids);
@@ -363,18 +373,23 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     this.cancelTarget.set(null);
   }
 
+  // ✅ Keep card, show spinner via CANCEL_PENDING, polling updates status
   confirmCancel(): void {
     const t = this.cancelTarget();
     if (!t || this.myLoading()) return;
 
+    const id = t.id;
+
     this.myLoading.set(true);
     this.bookingsService
-      .cancel(t.id)
+      .cancel(id)
       .pipe(finalize(() => this.myLoading.set(false)))
       .subscribe({
         next: () => {
           this.closeCancel();
+          // refresh to fetch CANCEL_PENDING quickly
           this.loadMyBookings();
+          this.toast.set('Cancellation requested. Updating status…');
         },
         error: (e) => {
           this.myError.set(this.toNiceApiMessage(e));
@@ -387,9 +402,11 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   hasDetail(b: BookingDto): boolean {
     return !!(b as any).detail;
   }
+
   getDetail(b: BookingDto): any {
     return (b as any).detail;
   }
+
   prettyJson(obj: any): string {
     try {
       return JSON.stringify(obj, null, 2);
