@@ -1,14 +1,33 @@
-.panel {
-  height: calc(100vh - 170px);
-  min-height: 520px;
+/* Match Catalogue layout */
+.pageCard {
+  height: calc(100vh - 190px); /* same offset used in catalogue */
+  min-height: 560px;
   overflow: hidden;
 }
 
-.panel > .card-body {
+.pageCard > .card-body {
+  height: 100%;
+  padding: 18px;
+}
+
+/* Sidebar can scroll */
+.pageCard:not(.contentCard) > .card-body {
+  overflow: auto;
+}
+
+/* Content card: avoid scrolling everything */
+.contentCard > .card-body {
+  overflow: hidden;
+  position: relative; /* for overlay */
+}
+
+/* Inner sections can scroll if needed (optional) */
+.sectionScroll {
   height: 100%;
   overflow: auto;
 }
 
+/* JSON box (My bookings detail) */
 .jsonBox {
   max-height: 220px;
   overflow: auto;
@@ -19,10 +38,7 @@
   font-size: 12px;
 }
 
-/* overlay loader */
-.card-body {
-  position: relative;
-}
+/* Overlay loader */
 .overlay {
   position: absolute;
   inset: 0;
@@ -32,6 +48,7 @@
   place-items: center;
   border-radius: 16px;
 }
+
 .overlayCard {
   background: #fff;
   border: 1px solid rgba(17, 24, 39, 0.12);
@@ -39,4 +56,12 @@
   padding: 14px 18px;
   text-align: center;
   box-shadow: 0 10px 28px rgba(17, 24, 39, 0.08);
+}
+
+/* Align checkbox with search input */
+.filterRow {
+  height: 42px; /* same as input height */
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
 }

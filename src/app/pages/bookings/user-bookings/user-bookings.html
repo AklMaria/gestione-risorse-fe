@@ -1,40 +1,54 @@
 <div class="row g-3">
-  <!-- menu sinistro -->
+  <!-- Left menu -->
   <div class="col-12 col-lg-3">
-    <div class="card shadow-soft panel">
+    <div class="card shadow-soft pageCard">
       <div class="card-body">
-        <div class="fw-bold mb-2">User</div>
-        <div class="text-muted small mb-3">Prenota / Le mie prenotazioni</div>
-
         <div class="d-grid gap-2">
-          <button class="btn text-start" [ngClass]="view() === 'browse' ? 'btn-app' : 'btn-outline-secondary'" (click)="setView('browse')">
-            Prenotabili
-            <div class="small opacity-75">cards disponibilità</div>
+          <button
+            class="btn text-start"
+            [ngClass]="view() === 'browse' ? 'btn-app' : 'btn-outline-secondary'"
+            type="button"
+            (click)="setView('browse')"
+          >
+            Bookable
+            <div class="small opacity-75">Browse availabilities</div>
           </button>
 
-          <button class="btn text-start" [ngClass]="view() === 'my' ? 'btn-app' : 'btn-outline-secondary'" (click)="setView('my')">
-            Le mie prenotazioni
-            <div class="small opacity-75">cards booking</div>
+          <button
+            class="btn text-start"
+            [ngClass]="view() === 'my' ? 'btn-app' : 'btn-outline-secondary'"
+            type="button"
+            (click)="setView('my')"
+          >
+            My bookings
+            <div class="small opacity-75">Your requests & status</div>
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- contenuto -->
+  <!-- Content -->
   <div class="col-12 col-lg-9">
-    <div class="card shadow-soft panel">
+    <div class="card shadow-soft pageCard contentCard">
       <div class="card-body">
-        <!-- PRENOTABILI -->
+        <!-- BOOKABLE -->
         <ng-container *ngIf="view() === 'browse'">
           <div class="d-flex align-items-start justify-content-between gap-3">
             <div>
-              <h3 class="h5 mb-1">Prenotabili</h3>
-              <div class="text-muted">Tutte le disponibilità (senza UUID).</div>
+              <h3 class="h5 mb-1">Bookable</h3>
+              <div class="text-muted">All availabilities.</div>
             </div>
 
-            <button class="btn btn-outline-secondary btn-sm px-3" type="button" (click)="refreshPrenotabili()" [disabled]="loading()">
-              Refresh
+            <button
+              class="btn btn-outline-secondary icon-btn"
+              type="button"
+              (click)="refreshPrenotabili()"
+              [disabled]="loading()"
+              title="Refresh"
+              aria-label="Refresh"
+            >
+              <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
 
@@ -44,15 +58,31 @@
           <div *ngIf="error()" class="alert alert-danger">{{ error() }}</div>
 
           <div class="row g-2 align-items-end mb-3">
-            <div class="col-12 col-lg-6">
-              <label class="form-label">Cerca</label>
-              <input class="form-control" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Room A, data..." />
+            <div class="col-12 col-lg-8">
+              <label class="form-label">Search</label>
+              <input
+                class="form-control"
+                [ngModel]="search()"
+                (ngModelChange)="search.set($event)"
+                placeholder="Room A, date..."
+              />
             </div>
 
-            <div class="col-12 col-lg-3">
-              <div class="form-check mt-4">
-                <input class="form-check-input" type="checkbox" [checked]="onlyAvailable()" (change)="onlyAvailable.set(!onlyAvailable())" id="onlyAvail2" />
-                <label class="form-check-label" for="onlyAvail2">Solo con posti</label>
+            <div class="col-12 col-lg-4">
+              <label class="form-label d-none d-lg-block">&nbsp;</label>
+              <div class="filterRow">
+                <div class="form-check m-0">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    [checked]="onlyAvailable()"
+                    (change)="onlyAvailable.set(!onlyAvailable())"
+                    id="onlyAvailBookings"
+                  />
+                  <label class="form-check-label" for="onlyAvailBookings">
+                    Only with availability
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -62,7 +92,9 @@
               <div class="card h-100 shadow-sm">
                 <div class="card-body">
                   <div class="fw-bold mb-1">{{ c.resourceName }}</div>
-                  <div class="text-muted small mb-2">{{ formatNice(c.startDate) }} → {{ formatNice(c.endDate) }}</div>
+                  <div class="text-muted small mb-2">
+                    {{ formatNice(c.startDate) }} → {{ formatNice(c.endDate) }}
+                  </div>
 
                   <div class="d-flex gap-2 flex-wrap mb-3">
                     <span class="badge text-bg-light border">Capacity: {{ c.capacity }}</span>
@@ -72,15 +104,20 @@
                     </span>
                   </div>
 
-                  <button class="btn btn-app w-100" type="button" (click)="openBook(c)" [disabled]="loading() || c.available <= 0">
-                    Prenota
+                  <button
+                    class="btn btn-app w-100"
+                    type="button"
+                    (click)="openBook(c)"
+                    [disabled]="loading() || c.available <= 0"
+                  >
+                    Book
                   </button>
                 </div>
               </div>
             </div>
 
             <div class="col-12" *ngIf="!loading() && filteredCards().length === 0">
-              <div class="alert alert-light border">Nessuna disponibilità trovata.</div>
+              <div class="alert alert-light border">No availabilities found.</div>
             </div>
           </div>
 
@@ -92,7 +129,7 @@
               <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
                 <div class="modal-content">
                   <div class="modal-header">
-                    <h5 class="modal-title">Conferma prenotazione</h5>
+                    <h5 class="modal-title">Confirm booking</h5>
                     <button type="button" class="btn-close" aria-label="Close" (click)="closeBook()"></button>
                   </div>
 
@@ -101,7 +138,9 @@
 
                     <div *ngIf="bookTarget() as t">
                       <div class="fw-bold">{{ t.resourceName }}</div>
-                      <div class="text-muted small mb-2">{{ formatNice(t.startDate) }} → {{ formatNice(t.endDate) }}</div>
+                      <div class="text-muted small mb-2">
+                        {{ formatNice(t.startDate) }} → {{ formatNice(t.endDate) }}
+                      </div>
 
                       <div class="mb-3">
                         <span class="badge" [ngClass]="t.available > 0 ? 'text-bg-success' : 'text-bg-secondary'">
@@ -109,14 +148,23 @@
                         </span>
                       </div>
 
-                      <label class="form-label">Note (opzionale)</label>
-                      <input class="form-control" [(ngModel)]="bookNote" [disabled]="loading()" placeholder="Es: per meeting..." />
+                      <label class="form-label">Note (optional)</label>
+                      <input
+                        class="form-control"
+                        [(ngModel)]="bookNote"
+                        [disabled]="loading()"
+                        placeholder="e.g. for meeting..."
+                      />
                     </div>
                   </div>
 
                   <div class="modal-footer">
-                    <button class="btn btn-outline-secondary" type="button" (click)="closeBook()" [disabled]="loading()">Annulla</button>
-                    <button class="btn btn-app" type="button" (click)="confirmBook()" [disabled]="loading()">Prenota</button>
+                    <button class="btn btn-outline-secondary" type="button" (click)="closeBook()" [disabled]="loading()">
+                      Cancel
+                    </button>
+                    <button class="btn btn-app" type="button" (click)="confirmBook()" [disabled]="loading()">
+                      Book
+                    </button>
                   </div>
                 </div>
               </div>
@@ -124,19 +172,32 @@
           </ng-container>
         </ng-container>
 
-        <!-- LE MIE PRENOTAZIONI -->
+        <!-- MY BOOKINGS -->
         <ng-container *ngIf="view() === 'my'">
           <div class="d-flex align-items-start justify-content-between gap-3">
             <div>
-              <h3 class="h5 mb-1">Le mie prenotazioni</h3>
-              <div class="text-muted">Salvate su questo browser (localStorage).</div>
+              <h3 class="h5 mb-1">My bookings</h3>
+              <div class="text-muted">Saved in this browser (localStorage).</div>
             </div>
 
             <div class="d-flex gap-2">
-              <button class="btn btn-outline-secondary btn-sm px-3" type="button" (click)="loadMyBookings()" [disabled]="myLoading()">
-                Refresh
+              <button
+                class="btn btn-outline-secondary icon-btn"
+                type="button"
+                (click)="loadMyBookings()"
+                [disabled]="myLoading()"
+                title="Refresh"
+                aria-label="Refresh"
+              >
+                <i class="bi bi-arrow-clockwise"></i>
               </button>
-              <button class="btn btn-outline-secondary btn-sm px-3" type="button" (click)="toggleMyAuto()" [disabled]="myLoading()">
+
+              <button
+                class="btn btn-outline-secondary btn-sm px-3"
+                type="button"
+                (click)="toggleMyAuto()"
+                [disabled]="myLoading()"
+              >
                 Auto: {{ myAuto() ? 'ON' : 'OFF' }}
               </button>
             </div>
@@ -152,8 +213,13 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start gap-2">
                     <span class="badge" [ngClass]="statusBadgeClass(b.status)">{{ b.status }}</span>
-                    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="removeFromMine(b.id)" title="Rimuovi da 'mie'">
-                      Remove
+                    <button
+                      class="btn btn-sm btn-outline-secondary"
+                      type="button"
+                      (click)="removeFromMine(b.id)"
+                      title="Hide from my list"
+                    >
+                      Hide
                     </button>
                   </div>
 
@@ -165,21 +231,26 @@
                   </div>
 
                   <ng-template #noDetail>
-                    <div class="text-muted small mt-3">Dettagli non disponibili (in attesa o non confirmed).</div>
+                    <div class="text-muted small mt-3">Details not available yet.</div>
                   </ng-template>
 
                   <div class="mt-3 d-grid">
-                    <button class="btn btn-outline-danger" type="button" (click)="openCancel(b)" [disabled]="myLoading() || !canCancelMine(b)">
-                      Cancella
+                    <button
+                      class="btn btn-outline-danger"
+                      type="button"
+                      (click)="openCancel(b)"
+                      [disabled]="myLoading() || !canCancelMine(b)"
+                    >
+                      Cancel booking
                     </button>
-                    <div class="text-muted small mt-1">Cancellazione solo se CONFIRMED.</div>
+                    <div class="text-muted small mt-1">Cancel is available only if CONFIRMED.</div>
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="col-12" *ngIf="!myLoading() && myBookings().length === 0">
-              <div class="alert alert-light border">Non hai ancora prenotazioni salvate qui.</div>
+              <div class="alert alert-light border">You have no bookings saved here yet.</div>
             </div>
           </div>
 
@@ -191,18 +262,24 @@
               <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
                 <div class="modal-content">
                   <div class="modal-header">
-                    <h5 class="modal-title">Conferma cancellazione</h5>
+                    <h5 class="modal-title">Confirm cancellation</h5>
                     <button type="button" class="btn-close" aria-label="Close" (click)="closeCancel()"></button>
                   </div>
 
                   <div class="modal-body">
-                    <p class="mb-0">Vuoi cancellare questo booking?</p>
-                    <p class="text-muted small mb-0 mt-2">Lo stato passerà a CANCEL_PENDING e poi CANCELLED/FAILED.</p>
+                    <p class="mb-0">Do you want to cancel this booking?</p>
+                    <p class="text-muted small mb-0 mt-2">
+                      Status will move to CANCEL_PENDING, then CANCELLED/FAILED.
+                    </p>
                   </div>
 
                   <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" (click)="closeCancel()" [disabled]="myLoading()">Annulla</button>
-                    <button type="button" class="btn btn-danger" (click)="confirmCancel()" [disabled]="myLoading()">Cancella</button>
+                    <button type="button" class="btn btn-outline-secondary" (click)="closeCancel()" [disabled]="myLoading()">
+                      Back
+                    </button>
+                    <button type="button" class="btn btn-danger" (click)="confirmCancel()" [disabled]="myLoading()">
+                      Cancel booking
+                    </button>
                   </div>
                 </div>
               </div>
@@ -214,7 +291,7 @@
         <div class="overlay" *ngIf="loading() || myLoading()">
           <div class="overlayCard">
             <div class="spinner-border" role="status" aria-hidden="true"></div>
-            <div class="mt-2">Aggiornamento…</div>
+            <div class="mt-2">Updating…</div>
           </div>
         </div>
       </div>
