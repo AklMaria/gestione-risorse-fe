@@ -1,4 +1,140 @@
-<h3 class="h5">Admin</h3>
-<p class="text-muted">
-  Qui incolliamo la tabella/filtri che avevi prima in Bookings (admin).
-</p>
+<div class="d-flex align-items-start justify-content-between gap-3">
+  <div>
+    <h3 class="h5 mb-1">Admin</h3>
+    <div class="text-muted">Tutti i booking (filtri + detail + cancel).</div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-secondary btn-sm px-3" type="button" (click)="refresh()" [disabled]="loading()">
+      Refresh
+    </button>
+    <button class="btn btn-outline-secondary btn-sm px-3" type="button" (click)="toggleAuto()" [disabled]="loading()">
+      Auto: {{ autoRefresh() ? 'ON' : 'OFF' }}
+    </button>
+  </div>
+</div>
+
+<hr />
+
+<div class="card border-0 bg-light-subtle mb-3">
+  <div class="card-body">
+    <div class="fw-semibold mb-2">Filters</div>
+
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-lg-3">
+        <label class="form-label">Status</label>
+        <select class="form-select" [(ngModel)]="filterStatus" [disabled]="loading()">
+          <option value="">(any)</option>
+          <option value="PENDING">PENDING</option>
+          <option value="CONFIRMED">CONFIRMED</option>
+          <option value="REJECTED">REJECTED</option>
+          <option value="FAILED">FAILED</option>
+          <option value="CANCEL_PENDING">CANCEL_PENDING</option>
+          <option value="CANCELLED">CANCELLED</option>
+        </select>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <label class="form-label">Availability ID</label>
+        <input class="form-control" [(ngModel)]="filterAvailabilityId" [disabled]="loading()" placeholder="UUID (admin)" />
+      </div>
+
+      <div class="col-12 col-lg-3 d-flex gap-2">
+        <button class="btn btn-app flex-fill" type="button" (click)="applyFilters()" [disabled]="loading()">Apply</button>
+        <button class="btn btn-outline-secondary flex-fill" type="button" (click)="clearFilters()" [disabled]="loading()">Clear</button>
+      </div>
+    </div>
+
+    <div *ngIf="listError()" class="alert alert-danger mt-3 mb-0">{{ listError() }}</div>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table align-middle table-hover">
+    <thead>
+    <tr>
+      <th style="width: 18%">Status</th>
+      <th>AvailabilityId</th>
+      <th>Note</th>
+      <th style="width: 22%">Reason</th>
+      <th class="text-end" style="width: 220px">Actions</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr *ngFor="let b of bookings()">
+      <td><span class="badge" [ngClass]="statusBadgeClass(b.status)">{{ b.status }}</span></td>
+      <td class="text-muted">{{ b.availabilityId }}</td>
+      <td>{{ b.note || '—' }}</td>
+      <td class="text-muted">{{ b.reason || '—' }}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-secondary me-2" type="button" (click)="openDetail(b)" [disabled]="loading()">Detail</button>
+        <button class="btn btn-sm btn-outline-danger" type="button" (click)="openCancel(b)" [disabled]="loading()">Cancel</button>
+      </td>
+    </tr>
+
+    <tr *ngIf="!loading() && bookings().length === 0">
+      <td colspan="5" class="text-center text-muted py-4">Nessun booking.</td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- DETAIL MODAL -->
+<ng-container *ngIf="detailOpen()">
+  <div class="modal-backdrop fade show"></div>
+
+  <div class="modal d-block" tabindex="-1" role="dialog" (click)="closeDetail()">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Booking detail</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeDetail()"></button>
+        </div>
+
+        <div class="modal-body">
+          <div *ngIf="detailLoading()" class="alert alert-light border d-flex align-items-center gap-2">
+            <div class="spinner-border spinner-border-sm"></div>
+            <div>Caricamento…</div>
+          </div>
+
+          <div *ngIf="detailError()" class="alert alert-danger">{{ detailError() }}</div>
+
+          <ng-container *ngIf="detail() as d">
+            <pre class="jsonBox">{{ prettyJson(d) }}</pre>
+          </ng-container>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" type="button" (click)="closeDetail()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- CANCEL MODAL -->
+<ng-container *ngIf="cancelOpen()">
+  <div class="modal-backdrop fade show"></div>
+
+  <div class="modal d-block" tabindex="-1" role="dialog" (click)="closeCancel()">
+    <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Conferma cancellazione</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeCancel()"></button>
+        </div>
+
+        <div class="modal-body">
+          <p class="mb-0">Vuoi cancellare questo booking?</p>
+          <p class="text-muted small mb-0 mt-2">Lo stato passerà a CANCEL_PENDING e poi CANCELLED/FAILED.</p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeCancel()" [disabled]="loading()">Annulla</button>
+          <button type="button" class="btn btn-danger" (click)="confirmCancel()" [disabled]="loading()">Cancella</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
