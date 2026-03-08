@@ -1,18 +1,2 @@
-<div class="d-flex align-items-start justify-content-between gap-3 mb-3">
-  <div>
-    <h2 class="h4 mb-1">Bookings</h2>
-    <div class="text-muted">Scegli vista User o Admin.</div>
-  </div>
-
-  <div class="d-flex gap-2">
-    <button class="btn btn-sm px-3" [ngClass]="mode() === 'user' ? 'btn-app' : 'btn-outline-secondary'" (click)="setMode('user')">
-      User
-    </button>
-    <button class="btn btn-sm px-3" [ngClass]="mode() === 'admin' ? 'btn-app' : 'btn-outline-secondary'" (click)="setMode('admin')">
-      Admin
-    </button>
-  </div>
-</div>
-
-<app-user-bookings *ngIf="mode() === 'user'"></app-user-bookings>
-<app-admin-bookings *ngIf="mode() === 'admin'"></app-admin-bookings>
+<app-user-bookings *ngIf="auth.isUser()"></app-user-bookings>
+<app-admin-bookings *ngIf="auth.isAdmin()"></app-admin-bookings>

@@ -5,7 +5,7 @@ export type AppRole = 'user' | 'admin';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   // ✅ Imposta qui il ruolo (per ora hardcoded)
-  role = signal<AppRole>('admin');
+  role = signal<AppRole>('user');
 
   setRole(role: AppRole): void {
     this.role.set(role);

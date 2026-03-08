@@ -1,9 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-
-import { AdminBookingsComponent } from './admin-bookings/admin-bookings';
+import { AuthService } from '../../core/auth/auth.service';
 import { UserBookingsComponent } from './user-bookings/user-bookings';
+import { AdminBookingsComponent } from './admin-bookings/admin-bookings';
 
 @Component({
   selector: 'app-bookings',
@@ -13,9 +13,5 @@ import { UserBookingsComponent } from './user-bookings/user-bookings';
   styleUrls: ['./bookings.scss'],
 })
 export class BookingsComponent {
-  mode = signal<'user' | 'admin'>('user');
-
-  setMode(m: 'user' | 'admin') {
-    this.mode.set(m);
-  }
+  auth = inject(AuthService);
 }
