@@ -6,7 +6,6 @@ import { forkJoin, Subscription, timer } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 
-
 import { ResourcesService } from '../../catalogue/services/resources.service';
 import { SlotsService } from '../../catalogue/services/slots.service';
 import { AvailabilitiesService } from '../../catalogue/services/availabilities.service';
@@ -45,7 +44,6 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   // bookable section
   loading = signal(false);
   error = signal<string | null>(null);
-  toast = signal<string | null>(null);
 
   resources = signal<ResourcesDto[]>([]);
   slots = signal<SlotDto[]>([]);
@@ -63,8 +61,10 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   myLoading = signal(false);
   myError = signal<string | null>(null);
   myBookings = signal<BookingDto[]>([]);
-  myAuto = signal(true);
   private myPollSub: Subscription | null = null;
+
+  // bookable auto refresh when needed
+  private bookablePollSub: Subscription | null = null;
 
   // cancel modal
   cancelOpen = signal(false);
@@ -77,11 +77,11 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopMyPolling();
+    this.stopBookablePolling();
   }
 
   setView(v: 'browse' | 'my') {
     this.view.set(v);
-    this.toast.set(null);
     if (v === 'my') this.loadMyBookings();
   }
 
@@ -132,6 +132,66 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  // ---------- Bookable mapping for My bookings ----------
+  private cardByAvailabilityId(id: string): AvailabilityCardVm | undefined {
+    return this.cards().find((c) => c.availabilityId === id);
+  }
+
+  availabilityIdOf(b: BookingDto): string {
+    return String((b as any).availabilityId || '');
+  }
+
+  bookingDisplayName(b: BookingDto): string {
+    const avId = this.availabilityIdOf(b);
+    const c = avId ? this.cardByAvailabilityId(avId) : undefined;
+    if (c?.resourceName) return c.resourceName;
+
+    // fallback to detail if provided by API (optional)
+    const d: any = (b as any)?.detail;
+    const fromDetail = d?.resource?.name || d?.resourceName;
+    if (fromDetail) return fromDetail;
+
+    return 'Booking';
+  }
+
+  bookingDisplayRange(b: BookingDto): string {
+    const avId = this.availabilityIdOf(b);
+    const c = avId ? this.cardByAvailabilityId(avId) : undefined;
+    if (c?.startDate && c?.endDate)
+      return `${this.formatNice(c.startDate)} → ${this.formatNice(c.endDate)}`;
+
+    // fallback to detail if present
+    const d: any = (b as any)?.detail;
+    const start = d?.slot?.startDate || d?.startDate;
+    const end = d?.slot?.endDate || d?.endDate;
+    if (start && end) return `${this.formatNice(start)} → ${this.formatNice(end)}`;
+
+    // last resort
+    return avId ? `Availability: ${avId.slice(0, 8)}…` : '';
+  }
+
+  // ---------- Lock availability in Bookable ----------
+  private isActiveBookingStatus(s: BookingStatus): boolean {
+    return s === 'PENDING' || s === 'CONFIRMED' || s === 'CANCEL_PENDING';
+  }
+
+  isLockedAvailability(availabilityId: string): boolean {
+    return this.myBookings().some(
+      (b) => this.availabilityIdOf(b) === availabilityId && this.isActiveBookingStatus(b.status),
+    );
+  }
+
+  lockLabel(availabilityId: string): string {
+    const b = this.myBookings().find(
+      (x) => this.availabilityIdOf(x) === availabilityId && this.isActiveBookingStatus(x.status),
+    );
+    if (!b) return '';
+    if (b.status === 'CONFIRMED') return 'Booked';
+    if (b.status === 'PENDING') return 'Booking pending…';
+    if (b.status === 'CANCEL_PENDING') return 'Cancelling…';
+    return 'Booked';
+  }
+
   // ---------- BOOKABLE ----------
   loadBookable(): void {
     this.loading.set(true);
@@ -146,22 +206,20 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
         next: ({ resources, slots }) => {
           this.resources.set(resources ?? []);
           this.slots.set(slots ?? []);
-          this.loadAllAvailabilities();
+          this.refreshBookableAvailabilitiesOnly();
         },
         error: (e) => this.error.set(this.toNiceApiMessage(e)),
       });
   }
 
   refreshPrenotabili(): void {
-    this.loadBookable();
+    this.refreshBookableAvailabilitiesOnly();
   }
 
-  private loadAllAvailabilities(): void {
+  private refreshBookableAvailabilitiesOnly(): void {
     const res = this.resources();
-    if (res.length === 0) {
-      this.cards.set([]);
-      return;
-    }
+    const slots = this.slots();
+    if (!res.length || !slots.length) return;
 
     this.loading.set(true);
     this.error.set(null);
@@ -170,7 +228,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (lists: AvailabilityDto[][]) => {
-          const slotsById = new Map(this.slots().map((s) => [s.id, s]));
+          const slotsById = new Map(slots.map((s) => [s.id, s]));
           const out: AvailabilityCardVm[] = [];
 
           for (let i = 0; i < res.length; i++) {
@@ -217,7 +275,6 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
 
   // book modal
   openBook(c: AvailabilityCardVm): void {
-    this.toast.set(null);
     this.bookError.set(null);
     this.bookTarget.set(c);
     this.bookNote = '';
@@ -241,6 +298,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   confirmBook(): void {
     const t = this.bookTarget();
     if (!t || this.loading()) return;
+    if (this.isLockedAvailability(t.availabilityId)) return;
 
     this.loading.set(true);
     this.bookError.set(null);
@@ -251,9 +309,9 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (b: BookingDto) => {
           if (b?.id) this.saveMyBookingId(b.id);
-          this.toast.set('Booking requested (PENDING). Check “My bookings”.');
           this.closeBook();
           this.loadMyBookings();
+          this.refreshBookableAvailabilitiesOnly();
         },
         error: (e) => this.bookError.set(this.toNiceApiMessage(e)),
       });
@@ -273,6 +331,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     if (ids.length === 0) {
       this.myBookings.set([]);
       this.stopMyPolling();
+      this.stopBookablePolling();
       return;
     }
 
@@ -297,7 +356,9 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
 
       this.myBookings.set(sorted);
       this.myLoading.set(false);
+
       this.updateMyPolling();
+      this.updateBookablePolling();
     };
 
     for (const id of ids) {
@@ -320,17 +381,12 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleMyAuto(): void {
-    this.myAuto.set(!this.myAuto());
-    this.updateMyPolling();
-  }
-
   private hasPendingMine(): boolean {
     return this.myBookings().some((b) => b.status === 'PENDING' || b.status === 'CANCEL_PENDING');
   }
 
   private updateMyPolling(): void {
-    const should = this.myAuto() && this.hasPendingMine();
+    const should = this.view() === 'my' && this.hasPendingMine();
     if (should) this.startMyPolling();
     else this.stopMyPolling();
   }
@@ -347,11 +403,32 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     this.myPollSub = null;
   }
 
+  private hasActiveBookings(): boolean {
+    return this.myBookings().some((b) => this.isActiveBookingStatus(b.status));
+  }
+
+  private updateBookablePolling(): void {
+    const should = this.hasActiveBookings();
+    if (should) this.startBookablePolling();
+    else this.stopBookablePolling();
+  }
+
+  private startBookablePolling(): void {
+    if (this.bookablePollSub) return;
+    this.bookablePollSub = timer(3000, 3000).subscribe(() => {
+      this.refreshBookableAvailabilitiesOnly();
+    });
+  }
+
+  private stopBookablePolling(): void {
+    this.bookablePollSub?.unsubscribe();
+    this.bookablePollSub = null;
+  }
+
   canCancelMine(b: BookingDto): boolean {
     return b.status === 'CONFIRMED';
   }
 
-  // Hide is useful after completion (CANCELLED / FAILED / REJECTED)
   canHideMine(b: BookingDto): boolean {
     return b.status !== 'CONFIRMED' && b.status !== 'PENDING' && b.status !== 'CANCEL_PENDING';
   }
@@ -373,7 +450,6 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     this.cancelTarget.set(null);
   }
 
-  // ✅ Keep card, show spinner via CANCEL_PENDING, polling updates status
   confirmCancel(): void {
     const t = this.cancelTarget();
     if (!t || this.myLoading()) return;
@@ -387,31 +463,13 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.closeCancel();
-          // refresh to fetch CANCEL_PENDING quickly
           this.loadMyBookings();
-          this.toast.set('Cancellation requested. Updating status…');
+          this.refreshBookableAvailabilitiesOnly();
         },
         error: (e) => {
           this.myError.set(this.toNiceApiMessage(e));
           this.closeCancel();
         },
       });
-  }
-
-  // detail helpers
-  hasDetail(b: BookingDto): boolean {
-    return !!(b as any).detail;
-  }
-
-  getDetail(b: BookingDto): any {
-    return (b as any).detail;
-  }
-
-  prettyJson(obj: any): string {
-    try {
-      return JSON.stringify(obj, null, 2);
-    } catch {
-      return String(obj);
-    }
   }
 }
