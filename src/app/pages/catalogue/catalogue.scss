@@ -1,30 +1,33 @@
-/* controlla “lo spazio in mezzo” tra colonne e righe */
 .catalogueLayout {
-  --bs-gutter-x: 34px; /* spazio orizzontale (in mezzo) */
-  --bs-gutter-y: 18px; /* spazio verticale */
-  margin: 0;          /* evita extra scroll/spazi strani */
+  --bs-gutter-x: 34px;
+  --bs-gutter-y: 18px;
+  margin: 0;
 }
 
-/* stessa altezza per sidebar e content */
 .pageCard {
-  height: calc(100vh - 190px); /* header + margini */
+  height: calc(100vh - 190px);
   min-height: 560px;
   overflow: hidden;
 }
 
-/* padding coerenti e scroll interno se serve */
-.pageCard > .card-body {
+/* Sidebar: può scrollare se serve */
+.pageCard:not(.contentCard) > .card-body {
   height: 100%;
   overflow: auto;
   padding: 18px;
 }
 
-/* sidebar buttons */
+/* Content: NO scroll sul body */
+.contentCard > .card-body {
+  height: 100%;
+  overflow: hidden; /* <-- importante */
+  padding: 18px;
+}
+
 .pageCard .btn.text-start {
   padding: 14px 14px;
 }
 
-/* riduce un po' i gap tra bottoni */
 .pageCard .d-grid.gap-2 {
   gap: 12px !important;
 }

@@ -1,61 +1,55 @@
 <div class="d-flex align-items-start justify-content-between gap-3">
   <div>
     <h2 class="h4 mb-1">Resources</h2>
+    <div class="text-muted">Manage bookable resources.</div>
   </div>
 
   <button
-    class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-2"
+    class="btn btn-outline-secondary icon-btn"
     type="button"
     (click)="refresh()"
     [disabled]="loading()"
     title="Refresh"
+    aria-label="Refresh"
   >
     <i class="bi bi-arrow-clockwise"></i>
-    Refresh
   </button>
 </div>
 
 <hr />
 
-<!-- Loading -->
-<div *ngIf="loading()" class="alert alert-light border d-flex align-items-center gap-2" role="status">
-  <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
-  <div>Caricamento…</div>
-</div>
-
-<!-- Create form -->
+<!-- Create -->
 <div class="card border-0 bg-light-subtle mb-3">
   <div class="card-body">
-    <div class="d-flex flex-column flex-lg-row gap-2 align-items-lg-end">
-      <div class="flex-fill">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-lg-5">
         <label class="form-label">Name</label>
         <input
           class="form-control"
           [(ngModel)]="newName"
           [disabled]="loading()"
-          placeholder="Room A : general meeting"
+          placeholder="e.g. Meeting Room A"
         />
       </div>
 
-      <div class="flex-fill">
+      <div class="col-12 col-lg-5">
         <label class="form-label">Description</label>
         <input
           class="form-control"
           [(ngModel)]="newDescription"
           [disabled]="loading()"
-          placeholder="description"
+          placeholder="Optional"
         />
       </div>
 
-      <div class="createBtn">
+      <div class="col-12 col-lg-2">
         <button
-          class="btn btn-app w-100 d-inline-flex align-items-center justify-content-center gap-2"
+          class="btn btn-app w-100"
           type="button"
           (click)="create()"
           [disabled]="!canCreate()"
-          title="Create"
         >
-          <i class="bi bi-plus-lg"></i>
+          <i class="bi bi-plus-lg me-2"></i>
           Create
         </button>
       </div>
@@ -64,19 +58,19 @@
 </div>
 
 <!-- Table -->
+<div class="tableScroll">
 <div class="table-responsive">
   <table class="table align-middle table-hover">
     <thead>
     <tr>
-      <th style="width: 30%">Name</th>
+      <th style="width: 35%">Name</th>
       <th>Description</th>
-      <th class="text-end" style="width: 220px">Actions</th>
+      <th class="text-end" style="width: 160px">Actions</th>
     </tr>
     </thead>
 
     <tbody>
     <tr *ngFor="let r of resources()">
-      <!-- NAME -->
       <td>
         <ng-container *ngIf="!isEditing(r); else editNameTpl">
           <span class="fw-semibold">{{ r.name }}</span>
@@ -87,7 +81,6 @@
         </ng-template>
       </td>
 
-      <!-- DESC -->
       <td>
         <ng-container *ngIf="!isEditing(r); else editDescTpl">
           <span class="text-muted">{{ r.description || '—' }}</span>
@@ -98,12 +91,11 @@
             class="form-control form-control-sm"
             [(ngModel)]="editDescription"
             [disabled]="loading()"
-            placeholder="Opzionale"
+            placeholder="Optional"
           />
         </ng-template>
       </td>
 
-      <!-- ACTIONS -->
       <td class="text-end">
         <ng-container *ngIf="!isEditing(r); else editActionsTpl">
           <button
@@ -112,6 +104,7 @@
             (click)="startEdit(r)"
             [disabled]="loading()"
             title="Edit"
+            aria-label="Edit"
           >
             <i class="bi bi-pencil"></i>
           </button>
@@ -122,6 +115,7 @@
             (click)="openDelete(r)"
             [disabled]="loading()"
             title="Delete"
+            aria-label="Delete"
           >
             <i class="bi bi-trash"></i>
           </button>
@@ -134,6 +128,7 @@
             (click)="saveEdit()"
             [disabled]="!canSaveEdit()"
             title="Save"
+            aria-label="Save"
           >
             <i class="bi bi-check-lg"></i>
           </button>
@@ -144,6 +139,7 @@
             (click)="cancelEdit()"
             [disabled]="loading()"
             title="Cancel"
+            aria-label="Cancel"
           >
             <i class="bi bi-x-lg"></i>
           </button>
@@ -152,13 +148,13 @@
     </tr>
 
     <tr *ngIf="!loading() && resources().length === 0">
-      <td colspan="3" class="text-center text-muted py-4">Nessuna risorsa.</td>
+      <td colspan="3" class="text-center text-muted py-4">No resources yet.</td>
     </tr>
     </tbody>
   </table>
 </div>
-
-<!-- DELETE MODAL (se lo stai usando già nel TS) -->
+</div>
+<!-- Delete modal (if present in TS) -->
 <ng-container *ngIf="deleteOpen()">
   <div class="modal-backdrop fade show"></div>
 
@@ -166,23 +162,21 @@
     <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Conferma eliminazione</h5>
+          <h5 class="modal-title">Confirm delete</h5>
           <button type="button" class="btn-close" aria-label="Close" (click)="closeDelete()"></button>
         </div>
 
         <div class="modal-body">
-          <p class="mb-0">
-            Vuoi eliminare la risorsa <b>{{ deleteTarget()?.name }}</b>?
-          </p>
-          <p class="text-muted small mb-0 mt-2">Questa azione non è reversibile.</p>
+          <p class="mb-0">Delete <b>{{ deleteTarget()?.name }}</b>?</p>
+          <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" (click)="closeDelete()" [disabled]="loading()">
-            Annulla
+            Cancel
           </button>
           <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="loading()">
-            Elimina
+            Delete
           </button>
         </div>
       </div>

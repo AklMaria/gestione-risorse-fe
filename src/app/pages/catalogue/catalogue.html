@@ -11,7 +11,7 @@
             (click)="setView('resources')"
           >
             Resources
-            <div class="small opacity-75">Risorse prenotabili</div>
+            <div class="small opacity-75">Bookable resources</div>
           </button>
 
           <button
@@ -21,7 +21,7 @@
             (click)="setView('slots')"
           >
             Slots
-            <div class="small opacity-75">Finestre temporali</div>
+            <div class="small opacity-75">Time windows</div>
           </button>
 
           <button
@@ -40,7 +40,7 @@
 
   <!-- Content -->
   <div class="col-12 col-lg-9">
-    <div class="card shadow-soft pageCard">
+    <div class="card shadow-soft pageCard contentCard" >
       <div class="card-body">
         <app-resources *ngIf="view() === 'resources'"></app-resources>
         <app-slots *ngIf="view() === 'slots'"></app-slots>

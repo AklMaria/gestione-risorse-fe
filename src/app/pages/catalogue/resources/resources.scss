@@ -1,8 +1,14 @@
-.createBtn {
-  min-width: 140px;
+.tableScroll {
+  /* altezza “solo tabella” = altezza card - header/form */
+  max-height: calc(100vh - 420px);
+  overflow: auto;
+  border-radius: 14px;
 }
 
-/* opzionale: un filo più “morbida” la modal */
-.modal-content {
-  border-radius: 16px;
+/* header tabella “sticky” (bella quando scrolli) */
+.tableScroll thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
 }
