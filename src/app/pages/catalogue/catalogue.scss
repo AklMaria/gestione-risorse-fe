@@ -1,4 +1,30 @@
-/* niente altezza fissa: lascia la pagina naturale */
-.card {
-  border-radius: var(--radius-lg);
+/* controlla “lo spazio in mezzo” tra colonne e righe */
+.catalogueLayout {
+  --bs-gutter-x: 34px; /* spazio orizzontale (in mezzo) */
+  --bs-gutter-y: 18px; /* spazio verticale */
+  margin: 0;          /* evita extra scroll/spazi strani */
+}
+
+/* stessa altezza per sidebar e content */
+.pageCard {
+  height: calc(100vh - 190px); /* header + margini */
+  min-height: 560px;
+  overflow: hidden;
+}
+
+/* padding coerenti e scroll interno se serve */
+.pageCard > .card-body {
+  height: 100%;
+  overflow: auto;
+  padding: 18px;
+}
+
+/* sidebar buttons */
+.pageCard .btn.text-start {
+  padding: 14px 14px;
+}
+
+/* riduce un po' i gap tra bottoni */
+.pageCard .d-grid.gap-2 {
+  gap: 12px !important;
 }

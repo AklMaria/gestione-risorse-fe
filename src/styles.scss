@@ -109,3 +109,28 @@ input[type="datetime-local"].form-control {
 .alert {
   border-radius: var(--radius-md);
 }
+
+/* --- Fix scroll laterale (orizzontale) --- */
+html, body {
+  width: 100%;
+  overflow-x: hidden !important;
+}
+
+/* Evita che container-fluid sfori (bootstrap usa padding) */
+.container-fluid {
+  max-width: 1400px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* elementi media non devono mai sforare */
+img, svg, canvas, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* se qualche card/row fa overflow per colpa di flex */
+.row {
+  margin-left: 0;
+  margin-right: 0;
+}
