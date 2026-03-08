@@ -1,68 +1,72 @@
-<div class="slotsWrap">
-  <div class="d-flex align-items-start justify-content-between gap-3">
-    <div>
-      <h2 class="h4 mb-1">Slots</h2>
-    </div>
-
-    <button
-      class="btn btn-outline-secondary btn-sm px-3"
-      type="button"
-      (click)="refresh()"
-      [disabled]="loading()"
-    >
-      Refresh
-    </button>
+<div class="d-flex align-items-start justify-content-between gap-3">
+  <div>
+    <h2 class="h4 mb-1">Slots</h2>
+    <div class="text-muted">Manage time windows (start/end).</div>
   </div>
 
-  <hr />
+  <button
+    class="btn btn-outline-secondary icon-btn"
+    type="button"
+    (click)="refresh()"
+    [disabled]="loading()"
+    title="Refresh"
+    aria-label="Refresh"
+  >
+    <i class="bi bi-arrow-clockwise"></i>
+  </button>
+</div>
 
-  <!-- Create form -->
-  <div class="card border-0 bg-light-subtle mb-3">
-    <div class="card-body">
-      <div class="d-flex flex-column flex-lg-row gap-2 align-items-lg-end">
-        <div class="flex-fill">
-          <label class="form-label">Start</label>
-          <input
-            type="datetime-local"
-            class="form-control"
-            [(ngModel)]="newStartLocal"
-            [disabled]="loading()"
-          />
-        </div>
+<hr />
 
-        <div class="flex-fill">
-          <label class="form-label">End</label>
-          <input
-            type="datetime-local"
-            class="form-control"
-            [(ngModel)]="newEndLocal"
-            [disabled]="loading()"
-          />
-        </div>
-
-        <div class="createBtn">
-          <button class="btn btn-app w-100" type="button" (click)="create()" [disabled]="!canCreate()">
-            Create
-          </button>
-
-        </div>
+<!-- Create -->
+<div class="card border-0 bg-light-subtle mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-lg-5">
+        <label class="form-label">Start</label>
+        <input
+          type="datetime-local"
+          class="form-control"
+          [(ngModel)]="newStartLocal"
+          [disabled]="loading()"
+        />
       </div>
 
-      <div *ngIf="newStartLocal && newEndLocal && !canCreate()" class="text-danger small mt-2">
-        End deve essere dopo Start.
+      <div class="col-12 col-lg-5">
+        <label class="form-label">End</label>
+        <input
+          type="datetime-local"
+          class="form-control"
+          [(ngModel)]="newEndLocal"
+          [disabled]="loading()"
+        />
+      </div>
+
+      <div class="col-12 col-lg-2">
+        <button
+          class="btn btn-app w-100"
+          type="button"
+          (click)="create()"
+          [disabled]="!canCreate()"
+        >
+          <i class="bi bi-plus-lg me-2"></i>
+          Create
+        </button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Table -->
+<!-- Table (scroll only here) -->
+<div class="tableScroll">
   <div class="table-responsive">
     <table class="table align-middle table-hover">
       <thead>
       <tr>
-        <th style="width: 30%">Start</th>
-        <th style="width: 30%">End</th>
-        <th style="width: 18%">Duration</th>
-        <th class="text-end" style="width: 220px">Actions</th>
+        <th style="width: 34%">Start</th>
+        <th style="width: 34%">End</th>
+        <th style="width: 16%">Duration</th>
+        <th class="text-end" style="width: 16%">Actions</th>
       </tr>
       </thead>
 
@@ -110,6 +114,7 @@
               (click)="startEdit(s)"
               [disabled]="loading()"
               title="Edit"
+              aria-label="Edit"
             >
               <i class="bi bi-pencil"></i>
             </button>
@@ -120,6 +125,7 @@
               (click)="openDelete(s)"
               [disabled]="loading()"
               title="Delete"
+              aria-label="Delete"
             >
               <i class="bi bi-trash"></i>
             </button>
@@ -127,78 +133,64 @@
 
           <ng-template #editActionsTpl>
             <button
-              class="btn btn-sm btn-app me-2"
+              class="btn btn-app icon-btn me-2"
               type="button"
               (click)="saveEdit()"
               [disabled]="!canSaveEdit()"
+              title="Save"
+              aria-label="Save"
             >
-              Save
+              <i class="bi bi-check-lg"></i>
             </button>
 
             <button
-              class="btn btn-sm btn-outline-secondary"
+              class="btn btn-outline-secondary icon-btn"
               type="button"
               (click)="cancelEdit()"
               [disabled]="loading()"
+              title="Cancel"
+              aria-label="Cancel"
             >
-              Cancel
+              <i class="bi bi-x-lg"></i>
             </button>
-
-            <div *ngIf="editStartLocal && editEndLocal && !canSaveEdit()" class="text-danger small mt-1">
-              End deve essere dopo Start.
-            </div>
           </ng-template>
         </td>
       </tr>
 
       <tr *ngIf="!loading() && slots().length === 0">
-        <td colspan="4" class="text-center text-muted py-4">Nessuno slot.</td>
+        <td colspan="4" class="text-center text-muted py-4">No slots yet.</td>
       </tr>
       </tbody>
     </table>
   </div>
+</div>
 
-  <!-- DELETE MODAL -->
-  <ng-container *ngIf="deleteOpen()">
-    <div class="modal-backdrop fade show"></div>
+<!-- Delete modal (if you have it in TS) -->
+<ng-container *ngIf="deleteOpen()">
+  <div class="modal-backdrop fade show"></div>
 
-    <div class="modal d-block" tabindex="-1" role="dialog" (click)="closeDelete()">
-      <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Conferma eliminazione</h5>
-            <button type="button" class="btn-close" aria-label="Close" (click)="closeDelete()"></button>
-          </div>
+  <div class="modal d-block" tabindex="-1" role="dialog" (click)="closeDelete()">
+    <div class="modal-dialog modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm delete</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeDelete()"></button>
+        </div>
 
-          <div class="modal-body">
-            <p class="mb-2">Vuoi eliminare questo slot?</p>
-            <div class="small text-muted">
-              <div><b>Start:</b> {{ deleteTarget() ? formatNice(deleteTarget()!.startDate) : '' }}</div>
-              <div><b>End:</b> {{ deleteTarget() ? formatNice(deleteTarget()!.endDate) : '' }}</div>
-            </div>
-            <p class="text-muted small mb-0 mt-2">
-              Se ci sono availabilities collegate, il backend potrebbe rifiutare.
-            </p>
-          </div>
+        <div class="modal-body">
+          <p class="mb-0">Delete this slot?</p>
+          <p class="text-muted small mb-0 mt-2">This action cannot be undone.</p>
+        </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" (click)="closeDelete()" [disabled]="loading()">
-              Annulla
-            </button>
-            <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="loading()">
-              Elimina
-            </button>
-          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeDelete()" [disabled]="loading()">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="loading()">
+            Delete
+          </button>
         </div>
       </div>
     </div>
-  </ng-container>
-
-  <!-- OVERLAY LOADER (evita "glitch") -->
-  <div class="overlay" *ngIf="loading()">
-    <div class="overlayCard">
-      <div class="spinner-border" role="status" aria-hidden="true"></div>
-      <div class="mt-2">Aggiornamento…</div>
-    </div>
   </div>
-</div>
+</ng-container>
