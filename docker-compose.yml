@@ -1,0 +1,6 @@
+services:
+  frontend:
+    image: gestione-risorse-fe
+    container_name: gestione-risorse-fe
+    ports:
+      - "8080:80"
