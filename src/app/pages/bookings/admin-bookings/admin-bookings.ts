@@ -2,12 +2,19 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
-import { timer, Subscription } from 'rxjs';
+import { Subscription, timer, forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { BookingDto, BookingStatus } from '../bookings.dto';
+
+import { ResourcesService } from '../../catalogue/services/resources.service';
+import { SlotsService } from '../../catalogue/services/slots.service';
+import { AvailabilitiesService } from '../../catalogue/services/availabilities.service';
+import { ResourcesDto } from '../../catalogue/dto/resources.dto';
+import { SlotDto } from '../../catalogue/dto/slots.dto';
+import { AvailabilityDto } from '../../catalogue/dto/availabilities.dto';
 import { BookingsService } from '../bookings.service';
+import { BookingDto, BookingStatus } from '../bookings.dto';
 
-
+type UUID = string;
 
 @Component({
   selector: 'app-admin-bookings',
@@ -17,15 +24,27 @@ import { BookingsService } from '../bookings.service';
   styleUrls: ['./admin-bookings.scss'],
 })
 export class AdminBookingsComponent implements OnInit, OnDestroy {
-  private readonly service = inject(BookingsService);
+  private bookingsService = inject(BookingsService);
+
+  // catalogue lookups for labels
+  private resourcesService = inject(ResourcesService);
+  private slotsService = inject(SlotsService);
+  private availService = inject(AvailabilitiesService);
 
   loading = signal(false);
   listError = signal<string | null>(null);
 
-  filterStatus: BookingStatus | '' = '';
+  bookings = signal<BookingDto[]>([]);
+
+  // filters
+  filterStatus: '' | BookingStatus = '';
   filterAvailabilityId = '';
 
-  bookings = signal<BookingDto[]>([]);
+  // lookup cache
+  resources = signal<ResourcesDto[]>([]);
+  slots = signal<SlotDto[]>([]);
+  availById = signal<Map<UUID, AvailabilityDto>>(new Map());
+  lookupsLoaded = signal(false);
 
   // detail modal
   detailOpen = signal(false);
@@ -37,13 +56,12 @@ export class AdminBookingsComponent implements OnInit, OnDestroy {
   cancelOpen = signal(false);
   cancelTarget = signal<BookingDto | null>(null);
 
-  // polling
-  autoRefresh = signal(true);
+  // silent auto polling
   private pollSub: Subscription | null = null;
 
   ngOnInit(): void {
-    this.refresh();
-    this.updatePollingState();
+    this.loadLookups();
+    this.refresh(false);
   }
 
   ngOnDestroy(): void {
@@ -59,10 +77,15 @@ export class AdminBookingsComponent implements OnInit, OnDestroy {
         body?.error ||
         body?.detail ||
         err.message ||
-        'Richiesta fallita';
+        'Request failed';
       return String(msg);
     }
-    return 'Errore inatteso';
+    return 'Unexpected error';
+  }
+
+  formatNice(iso: string): string {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString();
   }
 
   statusBadgeClass(s: BookingStatus): string {
@@ -82,44 +105,160 @@ export class AdminBookingsComponent implements OnInit, OnDestroy {
     }
   }
 
-  refresh(): void {
-    this.loading.set(true);
-    this.listError.set(null);
+  prettyJson(obj: unknown): string {
+    try {
+      return JSON.stringify(obj, null, 2);
+    } catch {
+      return String(obj);
+    }
+  }
 
-    this.service
-      .list({ status: this.filterStatus, availabilityId: this.filterAvailabilityId })
-      .pipe(finalize(() => this.loading.set(false)))
+  detailObjOf(b: BookingDto | null): unknown {
+    return b?.detail ?? null;
+  }
+
+  private loadLookups(): void {
+    this.lookupsLoaded.set(false);
+
+    forkJoin({
+      resources: this.resourcesService.list(),
+      slots: this.slotsService.list(),
+    }).subscribe({
+      next: ({ resources, slots }) => {
+        this.resources.set(resources ?? []);
+        this.slots.set(slots ?? []);
+        this.lookupsLoaded.set(true);
+        this.warmAvailabilities();
+      },
+      error: () => {
+        this.lookupsLoaded.set(false);
+      },
+    });
+  }
+
+  private warmAvailabilities(): void {
+    const res = this.resources();
+    if (!res.length) return;
+
+    forkJoin(res.map((r) => this.availService.listByResource((r as any).id))).subscribe({
+      next: (lists) => {
+        const map = new Map<UUID, AvailabilityDto>();
+        for (const list of lists) {
+          for (const a of list ?? []) {
+            map.set((a as any).id, a);
+          }
+        }
+        this.availById.set(map);
+      },
+      error: () => {},
+    });
+  }
+
+  private resourceById(id: string | null | undefined): ResourcesDto | undefined {
+    if (!id) return undefined;
+    return this.resources().find((r) => (r as any).id === id);
+  }
+
+  private slotById(id: string | null | undefined): SlotDto | undefined {
+    if (!id) return undefined;
+    return this.slots().find((s) => (s as any).id === id);
+  }
+
+  bookingAvailabilityLabel(b: BookingDto): string {
+    const d: any = b.detail;
+    const fromDetailName = d?.resource?.name || d?.resourceName || '';
+    const fromDetailStart = d?.slot?.startDate || d?.startDate || '';
+    const fromDetailEnd = d?.slot?.endDate || d?.endDate || '';
+
+    if (fromDetailName && fromDetailStart && fromDetailEnd) {
+      return `${fromDetailName} — ${this.formatNice(fromDetailStart)} → ${this.formatNice(fromDetailEnd)}`;
+    }
+
+    const availabilityId = String(b.availabilityId || '');
+    const a = this.availById().get(availabilityId);
+
+    if (a) {
+      const r = this.resourceById((a as any).resourceId);
+      const s = this.slotById((a as any).slotId);
+      const rn = (r as any)?.name || 'Resource';
+      const start = (s as any)?.startDate || '';
+      const end = (s as any)?.endDate || '';
+
+      if (start && end) {
+        return `${rn} — ${this.formatNice(start)} → ${this.formatNice(end)}`;
+      }
+      return rn;
+    }
+
+    return availabilityId ? `Availability: ${availabilityId.slice(0, 8)}…` : '—';
+  }
+
+  private hasPending(): boolean {
+    return this.bookings().some((b) => b.status === 'PENDING' || b.status === 'CANCEL_PENDING');
+  }
+
+  private startPolling(): void {
+    if (this.pollSub) return;
+
+    this.pollSub = timer(3000, 3000).subscribe(() => {
+      this.refresh(true);
+    });
+  }
+
+  private stopPolling(): void {
+    this.pollSub?.unsubscribe();
+    this.pollSub = null;
+  }
+
+  private updatePolling(): void {
+    if (this.hasPending()) this.startPolling();
+    else this.stopPolling();
+  }
+
+  refresh(silent = false): void {
+    if (!silent) {
+      this.loading.set(true);
+      this.listError.set(null);
+    }
+
+    this.bookingsService
+      .list({
+        status: this.filterStatus === '' ? undefined : this.filterStatus,
+        availabilityId: this.filterAvailabilityId.trim() || undefined,
+      })
+      .pipe(
+        finalize(() => {
+          if (!silent) this.loading.set(false);
+        }),
+      )
       .subscribe({
         next: (items) => {
           this.bookings.set(items ?? []);
-          this.updatePollingState();
+          this.updatePolling();
         },
         error: (e) => {
-          this.listError.set(this.toNiceApiMessage(e));
-          this.bookings.set([]);
-          this.updatePollingState();
+          if (!silent) this.listError.set(this.toNiceApiMessage(e));
         },
       });
   }
 
   applyFilters(): void {
-    this.refresh();
+    this.refresh(false);
   }
 
   clearFilters(): void {
     this.filterStatus = '';
     this.filterAvailabilityId = '';
-    this.refresh();
+    this.refresh(false);
   }
 
-  // detail
   openDetail(b: BookingDto): void {
     this.detailOpen.set(true);
-    this.detail.set(null);
-    this.detailError.set(null);
-
     this.detailLoading.set(true);
-    this.service
+    this.detailError.set(null);
+    this.detail.set(null);
+
+    this.bookingsService
       .getById(b.id)
       .pipe(finalize(() => this.detailLoading.set(false)))
       .subscribe({
@@ -134,16 +273,12 @@ export class AdminBookingsComponent implements OnInit, OnDestroy {
     this.detailError.set(null);
   }
 
-  prettyJson(obj: any): string {
-    try {
-      return JSON.stringify(obj, null, 2);
-    } catch {
-      return String(obj);
-    }
+  canCancel(b: BookingDto): boolean {
+    return b.status === 'CONFIRMED';
   }
 
-  // cancel
   openCancel(b: BookingDto): void {
+    if (!this.canCancel(b)) return;
     this.cancelTarget.set(b);
     this.cancelOpen.set(true);
   }
@@ -158,13 +293,13 @@ export class AdminBookingsComponent implements OnInit, OnDestroy {
     if (!t || this.loading()) return;
 
     this.loading.set(true);
-    this.service
+    this.bookingsService
       .cancel(t.id)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: () => {
           this.closeCancel();
-          this.refresh();
+          this.refresh(true);
         },
         error: (e) => {
           this.listError.set(this.toNiceApiMessage(e));
@@ -173,30 +308,7 @@ export class AdminBookingsComponent implements OnInit, OnDestroy {
       });
   }
 
-  toggleAuto(): void {
-    this.autoRefresh.set(!this.autoRefresh());
-    this.updatePollingState();
-  }
-
-  private hasPending(): boolean {
-    return this.bookings().some((b) => b.status === 'PENDING' || b.status === 'CANCEL_PENDING');
-  }
-
-  private updatePollingState(): void {
-    const should = this.autoRefresh() && this.hasPending();
-    if (should) this.startPolling();
-    else this.stopPolling();
-  }
-
-  private startPolling(): void {
-    if (this.pollSub) return;
-    this.pollSub = timer(3000, 3000).subscribe(() => {
-      if (!this.loading()) this.refresh();
-    });
-  }
-
-  private stopPolling(): void {
-    this.pollSub?.unsubscribe();
-    this.pollSub = null;
+  trackById(_: number, x: { id: string }): string {
+    return x.id;
   }
 }
