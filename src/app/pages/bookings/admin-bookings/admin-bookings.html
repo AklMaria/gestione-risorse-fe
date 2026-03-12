@@ -79,7 +79,7 @@
         <tr>
           <th style="width: 16%">Status</th>
           <th>Availability</th>
-          <th>Note</th>
+
           <th style="width: 20%">Reason</th>
           <th class="text-end" style="width: 160px">Actions</th>
         </tr>
@@ -103,7 +103,6 @@
             <div class="fw-semibold">{{ bookingAvailabilityLabel(b) }}</div>
           </td>
 
-          <td>{{ b.note || '—' }}</td>
           <td class="text-muted">{{ b.reason || '—' }}</td>
 
           <td class="text-end">
@@ -188,10 +187,6 @@
                   <div>{{ d.reason || '—' }}</div>
                 </div>
 
-                <div class="col-12 col-lg-6">
-                  <div class="small text-muted">Note</div>
-                  <div>{{ d.note || '—' }}</div>
-                </div>
 
                 <div class="col-12" *ngIf="detailObjOf(d)">
                   <div class="small text-muted mb-1">Detail (JSON)</div>
