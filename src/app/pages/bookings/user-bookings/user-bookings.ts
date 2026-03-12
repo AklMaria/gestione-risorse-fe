@@ -6,6 +6,7 @@ import { forkJoin, Subscription, timer } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 
+
 import { ResourcesService } from '../../catalogue/services/resources.service';
 import { SlotsService } from '../../catalogue/services/slots.service';
 import { AvailabilitiesService } from '../../catalogue/services/availabilities.service';
@@ -41,7 +42,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
 
   view = signal<'browse' | 'my'>('browse');
 
-  // bookable section
+  // bookable section (visible loader only for manual refresh / initial load)
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -57,13 +58,13 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   bookNote = '';
   bookError = signal<string | null>(null);
 
-  // my bookings section
+  // my bookings section (visible loader only for manual refresh / cancel)
   myLoading = signal(false);
   myError = signal<string | null>(null);
   myBookings = signal<BookingDto[]>([]);
   private myPollSub: Subscription | null = null;
 
-  // bookable auto refresh when needed
+  // bookable polling while you have active bookings
   private bookablePollSub: Subscription | null = null;
 
   // cancel modal
@@ -71,8 +72,8 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   cancelTarget = signal<BookingDto | null>(null);
 
   ngOnInit(): void {
-    this.loadBookable();
-    this.loadMyBookings();
+    this.loadBookable(); // visible loader (first load)
+    this.loadMyBookings(false); // manual load (no silent at startup)
   }
 
   ngOnDestroy(): void {
@@ -82,7 +83,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
 
   setView(v: 'browse' | 'my') {
     this.view.set(v);
-    if (v === 'my') this.loadMyBookings();
+    if (v === 'my') this.loadMyBookings(false);
   }
 
   // ---------- helpers ----------
@@ -146,7 +147,6 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     const c = avId ? this.cardByAvailabilityId(avId) : undefined;
     if (c?.resourceName) return c.resourceName;
 
-    // fallback to detail if provided by API (optional)
     const d: any = (b as any)?.detail;
     const fromDetail = d?.resource?.name || d?.resourceName;
     if (fromDetail) return fromDetail;
@@ -160,13 +160,11 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     if (c?.startDate && c?.endDate)
       return `${this.formatNice(c.startDate)} → ${this.formatNice(c.endDate)}`;
 
-    // fallback to detail if present
     const d: any = (b as any)?.detail;
     const start = d?.slot?.startDate || d?.startDate;
     const end = d?.slot?.endDate || d?.endDate;
     if (start && end) return `${this.formatNice(start)} → ${this.formatNice(end)}`;
 
-    // last resort
     return avId ? `Availability: ${avId.slice(0, 8)}…` : '';
   }
 
@@ -206,26 +204,37 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
         next: ({ resources, slots }) => {
           this.resources.set(resources ?? []);
           this.slots.set(slots ?? []);
-          this.refreshBookableAvailabilitiesOnly();
+          // silent refresh of cards (no extra loader flicker)
+          this.refreshBookableAvailabilitiesOnly(true);
         },
         error: (e) => this.error.set(this.toNiceApiMessage(e)),
       });
   }
 
+  // manual refresh button uses visible loader
   refreshPrenotabili(): void {
-    this.refreshBookableAvailabilitiesOnly();
+    this.refreshBookableAvailabilitiesOnly(false);
   }
 
-  private refreshBookableAvailabilitiesOnly(): void {
+  /**
+   * @param silent true => update cards without touching `loading`/`error`
+   */
+  private refreshBookableAvailabilitiesOnly(silent = false): void {
     const res = this.resources();
     const slots = this.slots();
     if (!res.length || !slots.length) return;
 
-    this.loading.set(true);
-    this.error.set(null);
+    if (!silent) {
+      this.loading.set(true);
+      this.error.set(null);
+    }
 
     forkJoin(res.map((r) => this.availService.listByResource(r.id as any)))
-      .pipe(finalize(() => this.loading.set(false)))
+      .pipe(
+        finalize(() => {
+          if (!silent) this.loading.set(false);
+        }),
+      )
       .subscribe({
         next: (lists: AvailabilityDto[][]) => {
           const slotsById = new Map(slots.map((s) => [s.id, s]));
@@ -257,7 +266,9 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
           out.sort((x, y) => new Date(x.startDate).getTime() - new Date(y.startDate).getTime());
           this.cards.set(out);
         },
-        error: (e) => this.error.set(this.toNiceApiMessage(e)),
+        error: (e) => {
+          if (!silent) this.error.set(this.toNiceApiMessage(e));
+        },
       });
   }
 
@@ -273,7 +284,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       );
   }
 
-  // book modal
+  // ---------- Booking modal ----------
   openBook(c: AvailabilityCardVm): void {
     this.bookError.set(null);
     this.bookTarget.set(c);
@@ -310,14 +321,16 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
         next: (b: BookingDto) => {
           if (b?.id) this.saveMyBookingId(b.id);
           this.closeBook();
-          this.loadMyBookings();
-          this.refreshBookableAvailabilitiesOnly();
+
+          // update states (my bookings visible, bookable silent)
+          this.loadMyBookings(false);
+          this.refreshBookableAvailabilitiesOnly(true);
         },
         error: (e) => this.bookError.set(this.toNiceApiMessage(e)),
       });
   }
 
-  // ---------- MY BOOKINGS ----------
+  // ---------- MY BOOKINGS (silent polling) ----------
   private getMyIds(): string[] {
     return JSON.parse(localStorage.getItem('myBookingIds') || '[]') as string[];
   }
@@ -326,7 +339,10 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     localStorage.setItem('myBookingIds', JSON.stringify(ids));
   }
 
-  loadMyBookings(): void {
+  /**
+   * @param silent true => background refresh (no loader flicker)
+   */
+  loadMyBookings(silent = false): void {
     const ids = this.getMyIds();
     if (ids.length === 0) {
       this.myBookings.set([]);
@@ -335,8 +351,10 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.myLoading.set(true);
-    this.myError.set(null);
+    if (!silent) {
+      this.myLoading.set(true);
+      this.myError.set(null);
+    }
 
     const results: BookingDto[] = [];
     const remainingIds: string[] = [];
@@ -355,7 +373,10 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
       });
 
       this.myBookings.set(sorted);
-      this.myLoading.set(false);
+
+      if (!silent) {
+        this.myLoading.set(false);
+      }
 
       this.updateMyPolling();
       this.updateBookablePolling();
@@ -373,7 +394,9 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
             done();
             return;
           }
-          this.myError.set(this.toNiceApiMessage(e));
+          if (!silent) {
+            this.myError.set(this.toNiceApiMessage(e));
+          }
           remainingIds.push(id);
           done();
         },
@@ -394,7 +417,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   private startMyPolling(): void {
     if (this.myPollSub) return;
     this.myPollSub = timer(3000, 3000).subscribe(() => {
-      if (!this.myLoading() && this.view() === 'my') this.loadMyBookings();
+      if (this.view() === 'my') this.loadMyBookings(true); // ✅ silent
     });
   }
 
@@ -403,6 +426,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     this.myPollSub = null;
   }
 
+  // ---------- Bookable polling while active bookings exist (silent) ----------
   private hasActiveBookings(): boolean {
     return this.myBookings().some((b) => this.isActiveBookingStatus(b.status));
   }
@@ -416,7 +440,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   private startBookablePolling(): void {
     if (this.bookablePollSub) return;
     this.bookablePollSub = timer(3000, 3000).subscribe(() => {
-      this.refreshBookableAvailabilitiesOnly();
+      this.refreshBookableAvailabilitiesOnly(true); // ✅ silent
     });
   }
 
@@ -425,6 +449,7 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     this.bookablePollSub = null;
   }
 
+  // ---------- Cancel ----------
   canCancelMine(b: BookingDto): boolean {
     return b.status === 'CONFIRMED';
   }
@@ -436,10 +461,9 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
   removeFromMine(id: string): void {
     const ids = this.getMyIds().filter((x) => x !== id);
     this.setMyIds(ids);
-    this.loadMyBookings();
+    this.loadMyBookings(false);
   }
 
-  // cancel flow
   openCancel(b: BookingDto): void {
     this.cancelTarget.set(b);
     this.cancelOpen.set(true);
@@ -454,17 +478,15 @@ export class UserBookingsComponent implements OnInit, OnDestroy {
     const t = this.cancelTarget();
     if (!t || this.myLoading()) return;
 
-    const id = t.id;
-
     this.myLoading.set(true);
     this.bookingsService
-      .cancel(id)
+      .cancel(t.id)
       .pipe(finalize(() => this.myLoading.set(false)))
       .subscribe({
         next: () => {
           this.closeCancel();
-          this.loadMyBookings();
-          this.refreshBookableAvailabilitiesOnly();
+          this.loadMyBookings(false);
+          this.refreshBookableAvailabilitiesOnly(true); // ✅ silent
         },
         error: (e) => {
           this.myError.set(this.toNiceApiMessage(e));

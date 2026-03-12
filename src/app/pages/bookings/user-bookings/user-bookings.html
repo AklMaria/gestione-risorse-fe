@@ -31,6 +31,7 @@
               <div class="text-muted">All availabilities (no UUID).</div>
             </div>
 
+            <!-- manual refresh shows loader -->
             <button class="btn btn-outline-secondary icon-btn" type="button" (click)="refreshPrenotabili()" [disabled]="loading()" title="Refresh" aria-label="Refresh">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
@@ -140,7 +141,8 @@
               <div class="text-muted">Saved in this browser (localStorage).</div>
             </div>
 
-            <button class="btn btn-outline-secondary icon-btn" type="button" (click)="loadMyBookings()" [disabled]="myLoading()" title="Refresh" aria-label="Refresh">
+            <!-- manual refresh shows loader -->
+            <button class="btn btn-outline-secondary icon-btn" type="button" (click)="loadMyBookings(false)" [disabled]="myLoading()" title="Refresh" aria-label="Refresh">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
@@ -219,6 +221,7 @@
           </ng-container>
         </ng-container>
 
+        <!-- overlay loader (now appears only for manual refresh/cancel/book requests) -->
         <div class="overlay" *ngIf="loading() || myLoading()">
           <div class="overlayCard">
             <div class="spinner-border" role="status" aria-hidden="true"></div>
