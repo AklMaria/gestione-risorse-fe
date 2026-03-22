@@ -12,4 +12,11 @@ import { AuthService } from '../../core/auth/auth.service';
 })
 export class ShellComponent {
   auth = inject(AuthService);
+
+  setRole(role: 'user' | 'admin') {
+    // uses your AuthService as-is (setRole OR signal)
+    (this.auth as any).setRole
+      ? (this.auth as any).setRole(role)
+      : (this.auth as any).role.set(role);
+  }
 }
