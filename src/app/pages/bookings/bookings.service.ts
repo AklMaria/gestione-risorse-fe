@@ -5,7 +5,7 @@ import { BookingDto, BookingStatus, CreateBookingRequest, UUID } from './booking
 
 @Injectable({ providedIn: 'root' })
 export class BookingsService {
-  private readonly base = '/api/booking/bookings';
+  private readonly base = 'api/booking/bookings';
 
   constructor(private http: HttpClient) {}
 

@@ -11,7 +11,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class ResourcesService {
-  private readonly base = '/api/catalogue/resources';
+  private readonly base = 'api/catalogue/resources';
 
   constructor(private http: HttpClient) {}
 

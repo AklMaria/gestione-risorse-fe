@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build
+RUN npm run build -- --configuration production --base-href /group-10/ --deploy-url /group-10/
 
 # Serve app with nginx
 FROM nginx:alpine

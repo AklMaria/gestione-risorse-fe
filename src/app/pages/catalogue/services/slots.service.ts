@@ -5,7 +5,7 @@ import { CreateSlotRequest, SlotDto, UpdateSlotRequest, UUID } from '../dto/slot
 
 @Injectable({ providedIn: 'root' })
 export class SlotsService {
-  private readonly base = '/api/catalogue/slots';
+  private readonly base = 'api/catalogue/slots';
 
   constructor(private http: HttpClient) {}
 

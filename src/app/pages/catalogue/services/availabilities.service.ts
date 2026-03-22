@@ -10,7 +10,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class AvailabilitiesService {
-  private readonly base = '/api/catalogue';
+  private readonly base = 'api/catalogue';
 
   constructor(private http: HttpClient) {}
 
