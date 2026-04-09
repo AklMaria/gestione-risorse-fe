@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: gestione-risorse-microservices
+  namespace: argocd
+spec:
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/AklMaria/gestione-risorse-fe.git
+        revision: iac
+        directories:
+          - path: "deployment/*"   
+  template:
+    metadata:
+      name: "gestione-risorse-{{path.basename}}"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: gestione-risorse
+        app.kubernetes.io/managed-by: argocd
+    spec:
+      project: maria
+      source:
+        repoURL: https://github.com/AklMaria/gestione-risorse-fe.git
+        targetRevision: iac
+        path: "{{path}}"
+        directory:
+          recurse: true
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: group-10
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
