@@ -1,8 +1,0 @@
-node_modules/
-dist/
-.angular/
-.cache/
-.vscode/
-.idea/
-.DS_Store
-.env
