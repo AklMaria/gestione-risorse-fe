@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: booking-postgres
+  name: catalogue-postgres
   namespace: group-10
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: booking-postgres
+      app: catalogue-postgres
   template:
     metadata:
       labels:
-        app: booking-postgres
+        app: catalogue-postgres
     spec:
       containers:
         - name: postgres
@@ -23,17 +23,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: postgres-secrets
-                  key: BOOKING_DB
+                  key: CATALOGUE_DB
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
                   name: postgres-secrets
-                  key: BOOKING_USER
+                  key: CATALOGUE_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: postgres-secrets
-                  key: BOOKING_PASSWORD
+                  key: CATALOGUE_PASSWORD
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:
@@ -52,16 +52,4 @@ spec:
       volumes:
         - name: pgdata
           persistentVolumeClaim:
-            claimName: booking-pgdata
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: booking-postgres
-  namespace: group-10
-spec:
-  selector:
-    app: booking-postgres
-  ports:
-    - port: 5432
-      targetPort: 5432
+            claimName: catalogue-pgdata
