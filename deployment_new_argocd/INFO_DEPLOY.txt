@@ -1,0 +1,18 @@
+*** GESTIONE RISORSE - APPROCCIO HELM (UMBRELLA CHART) ***
+
+STRUTTURA:
+Questa cartella ospita l'infrastruttura "modernizzata" ad alte prestazioni che si basa sugli standard nativi di Helm. 
+Sfrutta il pattern a "Umbrella Chart": un orchestratore padre (gestione-risorse-chart) comanda quattro micro-chart (frontend, catalogue, booking, infrastructure).
+
+VANTAGGI:
+- I nomi dei servizi sono calcolati dinamicamente evitando collisioni.
+- Il namespace "group-10" e le password dei Secret sono iniettati universalmente attingendo da un solo file di global mapping (values.yaml alla radice padre).
+
+COME EFFETTUARE IL DEPLOY CON ARGOCD:
+Non serve più uno strumento massivo, basta un singolo entrypoint.
+-> File: argocd-helm-app.yaml
+
+Questo file genererà su ArgoCD la singola Application "gestione-risorse". Argo riconoscerà la presenza del parametro "helm:" e processerà in automatico lo stack basandosi sui values.yaml. 
+
+ATTENZIONE:
+- Se utilizzi questa versione modernizzata, NON attivare parallelamente il vecchio "applicationset.yaml", mantieni il cluster monouso sull'approccio Helm.

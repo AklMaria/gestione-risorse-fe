@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "booking-service.fullname" . }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "booking-service.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "booking-service.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}

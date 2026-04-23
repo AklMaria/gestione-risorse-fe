@@ -1,0 +1,14 @@
+*** GESTIONE RISORSE - APPROCCIO STATIC MANUAL (RAW YAML) ***
+
+STRUTTURA:
+Questa cartella contiene l'infrastruttura originale "statica" del progetto.
+Ogni componente (infrastruttura database/code, frontend, backend catalogue e booking) include i suoi deployment.yaml, service.yaml e config in formato crudo (senza templating).
+
+COME EFFETTUARE IL DEPLOY CON ARGOCD:
+Per rilasciare quest'architettura su Kubernetes, è presente un ApplicationSet specifico:
+-> File: applicationset.yaml
+
+Questo file è configurato per scansionare massivamente la cartella "deploy_old_argocd/*" alla ricerca di manifest. Genererà un'applicazione indipendente per ogni sotto-cartella.
+
+ATTENZIONE:
+- Se applichi questo ApplicationSet, devi ASSICURARTI di non avere lo stesso cluster collegato alla cartella "deployment_new_argocd", altrimenti andranno in rotta di collisione cercando di sovrascriversi le stesse risorse.

@@ -1,0 +1,6 @@
+replicas: 1
+image:
+  repository: "docker.io/mariakll/catalogue-service"
+  tag: "latest"
+  pullPolicy: "Always"
+port: 8081

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "infrastructure.fullname" . }}-booking-pgdata
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "infrastructure.labels" . | nindent 4 }}
+spec:
+  storageClassName: {{ .Values.storageClass }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.bookingPvcSize }}

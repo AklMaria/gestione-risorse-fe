@@ -1,0 +1,13 @@
+# Gestione Risorse Umbrella - Helm Values
+
+global:
+  namespace: group-10
+  secrets:
+    catalogueDb: catalogue_db
+    catalogueUser: catalogue_user
+    cataloguePass: catalogue_pass
+    bookingDb: booking_db
+    bookingUser: booking_user
+    bookingPass: booking_pass
+    rabbitUser: guest
+    rabbitPass: guest

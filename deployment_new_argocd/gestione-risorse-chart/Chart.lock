@@ -1,0 +1,15 @@
+dependencies:
+- name: infrastructure
+  repository: file://./charts/infrastructure
+  version: 0.1.0
+- name: catalogue-service
+  repository: file://./charts/catalogue-service
+  version: 0.1.0
+- name: booking-service
+  repository: file://./charts/booking-service
+  version: 0.1.0
+- name: frontend
+  repository: file://./charts/frontend
+  version: 0.1.0
+digest: sha256:1a2b363903268a8af276e49567425947291c7962c36882eca6d43417abce26f2
+generated: "2026-04-23T12:20:41.995056+02:00"

@@ -1,0 +1,7 @@
+storageClass: "csi-cinder-fast"
+cataloguePvcSize: "5Gi"
+bookingPvcSize: "5Gi"
+postgres:
+  image: "postgres:16"
+rabbitmq:
+  image: "rabbitmq:3-management"

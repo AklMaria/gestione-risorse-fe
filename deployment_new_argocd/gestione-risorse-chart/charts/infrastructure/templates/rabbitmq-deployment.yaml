@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "infrastructure.fullname" . }}-booking-rabbitmq
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "infrastructure.labels" . | nindent 4 }}
+    app.kubernetes.io/component: booking-rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "infrastructure.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: booking-rabbitmq
+  template:
+    metadata:
+      labels:
+        {{- include "infrastructure.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: booking-rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: {{ .Values.rabbitmq.image }}
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "infrastructure.fullname" . }}-rabbitmq-secrets
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "infrastructure.fullname" . }}-rabbitmq-secrets
+                  key: RABBITMQ_DEFAULT_PASS
+          readinessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 20
+            periodSeconds: 10

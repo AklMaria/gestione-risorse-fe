@@ -1,0 +1,19 @@
+apiVersion: v2
+name: gestione-risorse-chart
+description: A Helm umbrella chart for Gestione Risorse
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+  - name: infrastructure
+    version: "0.1.0"
+    repository: "file://./charts/infrastructure"
+  - name: catalogue-service
+    version: "0.1.0"
+    repository: "file://./charts/catalogue-service"
+  - name: booking-service
+    version: "0.1.0"
+    repository: "file://./charts/booking-service"
+  - name: frontend
+    version: "0.1.0"
+    repository: "file://./charts/frontend"

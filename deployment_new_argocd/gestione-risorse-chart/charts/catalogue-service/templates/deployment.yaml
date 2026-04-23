@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "catalogue-service.fullname" . }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "catalogue-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "catalogue-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "catalogue-service.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.port }}
+          env:
+            - name: SERVER_PORT
+              value: "{{ .Values.port }}"
+            - name: DB_URL
+              value: jdbc:postgresql://{{ .Release.Name }}-infrastructure-catalogue-postgres:5432/{{ .Values.global.secrets.catalogueDb }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-infrastructure-postgres-secrets
+                  key: CATALOGUE_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-infrastructure-postgres-secrets
+                  key: CATALOGUE_PASSWORD
+            - name: RABBIT_HOST
+              value: {{ .Release.Name }}-infrastructure-booking-rabbitmq
+            - name: RABBIT_PORT
+              value: "5672"
+            - name: RABBIT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-infrastructure-rabbitmq-secrets
+                  key: RABBIT_USER
+            - name: RABBIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-infrastructure-rabbitmq-secrets
+                  key: RABBIT_PASSWORD
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.port }}
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.port }}
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.port }}
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3

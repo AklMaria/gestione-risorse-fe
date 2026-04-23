@@ -1,0 +1,6 @@
+replicas: 1
+image:
+  repository: "docker.io/mariakll/gestione-risorse-fe"
+  tag: "latest"
+  pullPolicy: "Always"
+port: 80
