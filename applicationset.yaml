@@ -10,7 +10,7 @@ spec:
         repoURL: https://github.com/AklMaria/gestione-risorse-fe.git
         revision: iac
         directories:
-          - path: "deploy_old_argocd/*"
+          - path: "deploy_old_argocd_mono/*"
   template:
     metadata:
       name: "gestione-risorse-{{path.basename}}"
